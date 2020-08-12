@@ -1,0 +1,22 @@
+{
+  "name": "drkt",
+  "version": "0.0.1",
+  "description": "DDDv3 in all but name",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "start:dev": "tsnd src/index.ts"
+  },
+  "author": "Joseph Shetaye",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^14.0.27",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
+  },
+  "dependencies": {
+    "discord.js": "^12.2.0",
+    "ts-node-dev": "^1.0.0-pre.56",
+    "tslint": "^6.1.3"
+  }
+}
