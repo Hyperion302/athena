@@ -4,7 +4,7 @@
 
 ## cancel proposal <id>
 
-## update proposal <id> <value> <new value>
+## update proposal <id> <field> <new value>
 
 ## add action <id> <action>
 
@@ -179,6 +179,16 @@ add action 7df4d move channel \*3 below "General 2"
   }
 }
 ```
+
+# Proposal status codes
+
+`BUILDING` Created, but hasn't been opened to vote
+
+`RUNNING` Opened to vote
+
+`CLOSED` Implemented or didn't pass, votes tallied
+
+`CANCELLED` Cancelled before expiration
 
 # Future features
 
