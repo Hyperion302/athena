@@ -1,3 +1,4 @@
 node_modules/
 .vscode
-token
+configuration.json
+credentials.json

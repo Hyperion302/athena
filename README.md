@@ -6,6 +6,8 @@
 
 ## update proposal <id> <field> <new value>
 
+## refresh proposal <id>
+
 ## add action <id> <action>
 
 ## replace action <id> <index> <new action>
@@ -143,7 +145,7 @@ add action 7df4d move channel \*3 below "General 2"
 
 # Components
 
-1. Command parsing - Parse out commands
+1. Command parsing - Parse out commands and execute them
 2. Proposal timing - start a timer at the beginning of duration and check votes by end
 3. Proposal management - Synchronize DB and messages, update DB, implement proposals
 
@@ -197,3 +199,7 @@ Role position detection: alerts a server if there are members 'untouchable' by t
 Quorums: Custom quorums and vote ratio requirements beyond a simple majority no-quorum requirement
 
 Vote permission: A custom permission to allow or prohibit members from voting
+
+# Future fixes
+
+Error handling
