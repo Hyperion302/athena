@@ -11,6 +11,8 @@ import {
   setExpirationDate,
   scheduleProposal,
   getMessageObject,
+  countVotes,
+  clearVote,
 } from './proposals';
 import { Message, TextChannel, Client } from 'discord.js';
 
@@ -23,6 +25,7 @@ enum Command {
   ReplaceAction = 'replace action',
   RemoveAction = 'remove action',
   RunProposal = 'run proposal',
+  ClearVote = 'clear vote',
 }
 
 interface CreateProposalCommand {
@@ -51,6 +54,11 @@ interface RefreshProposalCommand {
 
 interface RunProposalCommand {
   command: Command.RunProposal;
+  id: string;
+}
+
+interface ClearVoteCommand {
+  command: Command.ClearVote;
   id: string;
 }
 
@@ -85,6 +93,7 @@ export function parseCommand(
   | CancelProposalCommand
   | UpdateProposalCommand
   | RefreshProposalCommand
+  | ClearVoteCommand
   | RunProposalCommand {
   if (command.startsWith(Command.CreateProposal)) {
     const params = command
@@ -155,6 +164,13 @@ export function parseCommand(
       id: params[0],
     };
   }
+  if (command.startsWith(Command.ClearVote)) {
+    const params = command.slice(Command.ClearVote.length).trim().split(' ');
+    return {
+      command: Command.ClearVote,
+      id: params[0],
+    };
+  }
 }
 
 export async function executeCommand(
@@ -163,6 +179,7 @@ export async function executeCommand(
     | CancelProposalCommand
     | UpdateProposalCommand
     | RefreshProposalCommand
+    | ClearVoteCommand
     | RunProposalCommand,
   messageObject: Message
 ) {
@@ -220,6 +237,7 @@ export async function executeCommand(
   // REFRESH PROPOSAL
   if (command.command == Command.RefreshProposal) {
     const proposal = await getProposal(command.id);
+    proposal.votes = await countVotes(command.id);
     await refreshProposalMessage(messageObject.client, proposal);
   }
 
@@ -235,5 +253,16 @@ export async function executeCommand(
     proposal.status = ProposalStatus.Running;
     await refreshProposalMessage(messageObject.client, proposal);
     scheduleProposal(messageObject.client, proposal, proposal.duration * 1000);
+  }
+
+  // CLEAR VOTE
+  if (command.command == Command.ClearVote) {
+    const proposal = await getProposal(command.id);
+    if (proposal.status != ProposalStatus.Running) {
+      throw new Error("Cannot cancel a vote on a proposal that isn't running");
+    }
+    await clearVote(proposal.id, messageObject.author.id);
+    proposal.votes = await countVotes(proposal.id);
+    await refreshProposalMessage(messageObject.client, proposal);
   }
 }

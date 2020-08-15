@@ -14,6 +14,8 @@ import {
   addVote,
   Vote,
   Proposal,
+  countVotes,
+  refreshProposalMessage,
 } from './proposals';
 import { Message } from 'discord.js';
 
@@ -88,11 +90,12 @@ client.on('messageReactionAdd', async (reaction, user) => {
   } catch (e) {
     return;
   }
-  // Since we know this is a proposal, remove the reaction
-  await reaction.remove();
+  // Since we know this is a proposal, remove the reaction if it's a thumbs up or down
+  if (reaction.emoji.name == '👎' || reaction.emoji.name == '👍')
+    await reaction.remove();
 
   // Can't vote if proposal isn't running
-  if (proposal.status == ProposalStatus.Running) return;
+  if (proposal.status != ProposalStatus.Running) return;
 
   // If it's a vote, count it
   if (reaction.emoji.name == '👎') {
@@ -101,6 +104,8 @@ client.on('messageReactionAdd', async (reaction, user) => {
     vote = Vote.Yes;
   } else return;
   await addVote(proposal.id, user.id, vote);
+  proposal.votes = await countVotes(proposal.id);
+  await refreshProposalMessage(client, proposal);
 });
 
 async function onSingleDelete(message: Message) {

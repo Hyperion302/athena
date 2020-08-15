@@ -22,17 +22,12 @@ export enum Vote {
 }
 
 enum ProposalColor {
-  Building = 10197915,
-  Running = 4886754,
-  Closed = 16777215,
-  Cancelled = 13632027,
+  Gray = 10197915,
+  Blue = 4886754,
+  Green = 8311585,
+  Red = 13632027,
+  Black = 1,
 }
-
-const proposalColors: any = {};
-proposalColors[ProposalStatus.Building] = ProposalColor.Building;
-proposalColors[ProposalStatus.Running] = ProposalColor.Running;
-proposalColors[ProposalStatus.Closed] = ProposalColor.Closed;
-proposalColors[ProposalStatus.Cancelled] = ProposalColor.Cancelled;
 
 export interface Proposal {
   author: string;
@@ -46,6 +41,10 @@ export interface Proposal {
   message: string;
   server: string;
   channel: string;
+  votes?: {
+    [Vote.Yes]: number;
+    [Vote.No]: number;
+  };
 }
 
 function getDurationString(duration: number): string {
@@ -81,10 +80,36 @@ export async function refreshProposalMessage(
 }
 
 export function generateProposalEmbed(proposal: Proposal): any {
+  let color: number;
+  if (proposal.status == ProposalStatus.Building) {
+    color = ProposalColor.Gray;
+  }
+
+  if (proposal.status == ProposalStatus.Running) {
+    color = ProposalColor.Blue;
+  }
+  if (proposal.votes) {
+    if (
+      proposal.status == ProposalStatus.Closed &&
+      proposal.votes[Vote.Yes] > proposal.votes[Vote.No]
+    ) {
+      color = ProposalColor.Green;
+    }
+    if (
+      proposal.status == ProposalStatus.Closed &&
+      proposal.votes[Vote.Yes] <= proposal.votes[Vote.No]
+    ) {
+      color = ProposalColor.Red;
+    }
+  }
+  if (proposal.status == ProposalStatus.Cancelled) {
+    color = ProposalColor.Black;
+  }
+
   return {
     embed: {
       description: proposal.description,
-      color: proposalColors[proposal.status],
+      color: color,
       timestamp: proposal.createdOn.toISOString(),
       footer: {
         text: `Proposal ${proposal.id}`,
@@ -94,13 +119,25 @@ export function generateProposalEmbed(proposal: Proposal): any {
         {
           name: 'Duration',
           value: getDurationString(proposal.duration),
-          inline: true,
         },
         {
           name: 'Author',
           value: `<@!${proposal.author}>`,
-          inline: true,
         },
+        ...(proposal.votes
+          ? [
+              {
+                name: '👍',
+                value: proposal.votes[Vote.Yes],
+                inline: true,
+              },
+              {
+                name: '👎',
+                value: proposal.votes[Vote.No],
+                inline: true,
+              },
+            ]
+          : []),
       ],
     },
   };
@@ -123,8 +160,51 @@ function schemaToObj(schema: any): Proposal {
 }
 
 export async function addVote(id: string, userID: string, vote: Vote) {
-  // NOTE: I check if you've voted here
-  console.log(`User ${userID} voted ${vote} on ${id}`);
+  // Silently fails if you've already voted
+  try {
+    await knex
+      .insert({
+        proposal_id: id,
+        user_id: userID,
+        vote,
+      })
+      .into('vote');
+  } catch (e) {
+    return;
+  }
+}
+
+export async function clearVote(id: string, userID: string) {
+  // Silently fails if you haven't voted
+  try {
+    await knex
+      .table('vote')
+      .where('proposal_id', id)
+      .andWhere('user_id', userID)
+      .delete();
+  } catch (e) {
+    return;
+  }
+}
+
+export async function countVotes(
+  id: string
+): Promise<{ [Vote.Yes]: number; [Vote.No]: number }> {
+  const queryResp = await knex
+    .select('vote')
+    .count('*')
+    .from('vote')
+    .where('proposal_id', id)
+    .groupBy('vote')
+    .orderBy('vote', 'desc');
+  const yesRow = queryResp.find((row) => row.vote == Vote.Yes);
+  const yes = yesRow ? yesRow['count(*)'] : 0;
+  const noRow = queryResp.find((row) => row.vote == Vote.No);
+  const no = noRow ? noRow['count(*)'] : 0;
+  return {
+    [Vote.Yes]: yes,
+    [Vote.No]: no,
+  };
 }
 
 export async function createProposal(
@@ -220,8 +300,13 @@ export async function handleProposalExpire(client: Client, id: string) {
   delete gIntervalList[id];
 
   // Tally votes, execute actions if it passes
+  const votes = await countVotes(id);
+  if (votes[Vote.Yes] > votes[Vote.No]) {
+    // Pass, run actions
+  }
   await setProposalStatus(id, ProposalStatus.Closed);
   const proposal = await getProposal(id);
+  proposal.votes = await countVotes(id);
   await refreshProposalMessage(client, proposal);
 }
 

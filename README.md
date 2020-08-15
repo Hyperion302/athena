@@ -16,6 +16,8 @@
 
 ## run proposal <id>
 
+## clear vote <id>
+
 Opens the proposal to voting. NOTE: No changes to the proposal will be allowed after this.
 
 # Actions
