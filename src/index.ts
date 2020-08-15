@@ -91,6 +91,9 @@ client.on('messageReactionAdd', async (reaction, user) => {
   // Since we know this is a proposal, remove the reaction
   await reaction.remove();
 
+  // Can't vote if proposal isn't running
+  if (proposal.status == ProposalStatus.Running) return;
+
   // If it's a vote, count it
   if (reaction.emoji.name == '👎') {
     vote = Vote.No;
