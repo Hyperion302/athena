@@ -10,6 +10,7 @@ import {
   refreshProposalMessage,
   setExpirationDate,
   scheduleProposal,
+  getMessageObject,
 } from './proposals';
 import { Message, TextChannel, Client } from 'discord.js';
 
@@ -168,6 +169,8 @@ export async function executeCommand(
   // I choose an if chain over a switch statement
   // because each switch case shares it's
   // scope with other switch cases
+
+  // CREATE PROPOSAL
   if (command.command == Command.CreateProposal) {
     const proposal = await createProposal(
       command.name,
@@ -180,13 +183,21 @@ export async function executeCommand(
     await setProposalMessage(proposal.id, proposalMessage);
   }
 
+  // CANCEL PROPOSAL
   if (command.command == Command.CancelProposal) {
     const proposal = await getProposal(command.id);
+    if (
+      proposal.status == ProposalStatus.Cancelled ||
+      proposal.status == ProposalStatus.Closed
+    ) {
+      throw new Error('Cannot cancel an already closed or cancelled proposal');
+    }
     await setProposalStatus(proposal.id, ProposalStatus.Cancelled);
     proposal.status = ProposalStatus.Cancelled;
     await refreshProposalMessage(messageObject.client, proposal);
   }
 
+  // UPDATE PROPOSAL
   if (command.command == Command.UpdateProposal) {
     const proposal = await getProposal(command.id);
     if (proposal.status != ProposalStatus.Building) {
@@ -206,20 +217,19 @@ export async function executeCommand(
     await refreshProposalMessage(messageObject.client, proposal);
   }
 
+  // REFRESH PROPOSAL
   if (command.command == Command.RefreshProposal) {
     const proposal = await getProposal(command.id);
     await refreshProposalMessage(messageObject.client, proposal);
   }
 
+  // RUN PROPOSAL
   if (command.command == Command.RunProposal) {
     const proposal = await getProposal(command.id);
     if (proposal.status != ProposalStatus.Building) {
       throw new Error('Cannot run an already running or closed proposal');
     }
     const expirationDate = new Date(Date.now() + proposal.duration * 1000);
-    console.log(
-      `Proposal ${proposal.id} will expire on ${expirationDate.getTime()}`
-    );
     await setExpirationDate(proposal.id, expirationDate);
     await setProposalStatus(proposal.id, ProposalStatus.Running);
     proposal.status = ProposalStatus.Running;

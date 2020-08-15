@@ -1,5 +1,5 @@
 import { knex } from './db';
-import { Message, Client, TextChannel } from 'discord.js';
+import { Message, Client, TextChannel, Channel } from 'discord.js';
 
 // Global list of running intervals.  This
 // list is populated at start time with data from
@@ -14,6 +14,11 @@ export enum ProposalStatus {
   Running,
   Closed,
   Cancelled,
+}
+
+export enum Vote {
+  Yes,
+  No,
 }
 
 enum ProposalColor {
@@ -68,10 +73,11 @@ export async function getMessageObject(
 export async function refreshProposalMessage(
   client: Client,
   proposal: Proposal
-) {
+): Promise<Message> {
   const proposalMessage = await getMessageObject(client, proposal);
   const refreshedEmbed = generateProposalEmbed(proposal);
-  proposalMessage.edit(refreshedEmbed);
+  await proposalMessage.edit(refreshedEmbed);
+  return proposalMessage;
 }
 
 export function generateProposalEmbed(proposal: Proposal): any {
@@ -116,8 +122,9 @@ function schemaToObj(schema: any): Proposal {
   };
 }
 
-function millsToSQLDatetime(mills: number): string {
-  return new Date(mills).toISOString().slice(0, 19).replace('T', ' ');
+export async function addVote(id: string, userID: string, vote: Vote) {
+  // NOTE: I check if you've voted here
+  console.log(`User ${userID} voted ${vote} on ${id}`);
 }
 
 export async function createProposal(
