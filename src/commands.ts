@@ -10,11 +10,21 @@ import {
   refreshProposalMessage,
   setExpirationDate,
   scheduleProposal,
-  getMessageObject,
   countVotes,
   clearVote,
 } from './proposals';
-import { Message, TextChannel, Client } from 'discord.js';
+import { Message } from 'discord.js';
+import { tAction, parseAction } from './actionParser';
+import {
+  validateAction,
+  getActions,
+  validateActions,
+  getNextIndex,
+  createAction,
+  replaceAction,
+  removeAction,
+  insertAction,
+} from './actions';
 
 enum Command {
   CreateProposal = 'create proposal',
@@ -24,6 +34,7 @@ enum Command {
   AddAction = 'add action',
   ReplaceAction = 'replace action',
   RemoveAction = 'remove action',
+  InsertAction = 'insert action',
   RunProposal = 'run proposal',
   ClearVote = 'clear vote',
 }
@@ -62,7 +73,49 @@ interface ClearVoteCommand {
   id: string;
 }
 
-function parseDuration(duration: string): number {
+interface AddActionCommand {
+  command: Command.AddAction;
+  id: string;
+  action: tAction;
+  actionString: string;
+}
+
+interface ReplaceActionCommand {
+  command: Command.ReplaceAction;
+  id: string;
+  index: number;
+  action: tAction;
+  actionString: string;
+}
+
+interface RemoveActionCommand {
+  command: Command.RemoveAction;
+  id: string;
+  index: number;
+}
+
+interface InsertActionCommand {
+  command: Command.InsertAction;
+  id: string;
+  index: number;
+  action: tAction;
+  actionString: string;
+}
+
+// Convenience union type
+type tCommand =
+  | CreateProposalCommand
+  | CancelProposalCommand
+  | UpdateProposalCommand
+  | RefreshProposalCommand
+  | RunProposalCommand
+  | ClearVoteCommand
+  | AddActionCommand
+  | ReplaceActionCommand
+  | RemoveActionCommand
+  | InsertActionCommand;
+
+export function parseDuration(duration: string): number {
   const unit = duration.slice(-1);
   const magnitude = parseInt(duration.slice(0, -1), 10);
   let multiplier: number;
@@ -85,16 +138,7 @@ function parseDuration(duration: string): number {
   return magnitude * multiplier;
 }
 
-export function parseCommand(
-  command: string,
-  channel: string
-):
-  | CreateProposalCommand
-  | CancelProposalCommand
-  | UpdateProposalCommand
-  | RefreshProposalCommand
-  | ClearVoteCommand
-  | RunProposalCommand {
+export function parseCommand(command: string, channel: string): tCommand {
   if (command.startsWith(Command.CreateProposal)) {
     const params = command
       .slice(Command.CreateProposal.length)
@@ -152,10 +196,46 @@ export function parseCommand(
     };
   }
   if (command.startsWith(Command.AddAction)) {
+    const params = command.slice(Command.AddAction.length).trim().split(' ');
+    const actionString = params.slice(1).join(' ');
+    const action = parseAction(actionString);
+    return {
+      command: Command.AddAction,
+      id: params[0],
+      action,
+      actionString,
+    };
   }
   if (command.startsWith(Command.ReplaceAction)) {
+    const params = command
+      .slice(Command.ReplaceAction.length)
+      .trim()
+      .split(' ');
+    let index = parseInt(params[1], 10);
+    if (isNaN(index)) throw new Error('Invalid index');
+    index--; // 1-indexed => 0-indexed
+    if (index < 0) throw new Error('Invalid index');
+    const actionString = params.slice(2).join(' ');
+    const action = parseAction(actionString);
+    return {
+      command: Command.ReplaceAction,
+      id: params[0],
+      index,
+      action,
+      actionString,
+    };
   }
   if (command.startsWith(Command.RemoveAction)) {
+    const params = command.slice(Command.RemoveAction.length).trim().split(' ');
+    let index = parseInt(params[1], 10);
+    if (isNaN(index)) throw new Error('Invalid index');
+    index--; // 1-indexed => 0-indexed
+    if (index < 0) throw new Error('Invalid index');
+    return {
+      command: Command.RemoveAction,
+      id: params[0],
+      index,
+    };
   }
   if (command.startsWith(Command.RunProposal)) {
     const params = command.slice(Command.RunProposal.length).trim().split(' ');
@@ -171,16 +251,26 @@ export function parseCommand(
       id: params[0],
     };
   }
+  if (command.startsWith(Command.InsertAction)) {
+    const params = command.slice(Command.RemoveAction.length).trim().split(' ');
+    let index = parseInt(params[1], 10);
+    if (isNaN(index)) throw new Error('Invalid index');
+    index--; // 1-indexed => 0-indexed
+    if (index < 0) throw new Error('Invalid index');
+    const actionString = params.slice(2).join(' ');
+    const action = parseAction(actionString);
+    return {
+      command: Command.InsertAction,
+      id: params[0],
+      index,
+      action,
+      actionString,
+    };
+  }
 }
 
 export async function executeCommand(
-  command:
-    | CreateProposalCommand
-    | CancelProposalCommand
-    | UpdateProposalCommand
-    | RefreshProposalCommand
-    | ClearVoteCommand
-    | RunProposalCommand,
+  command: tCommand,
   messageObject: Message
 ) {
   // I choose an if chain over a switch statement
@@ -211,7 +301,8 @@ export async function executeCommand(
     }
     await setProposalStatus(proposal.id, ProposalStatus.Cancelled);
     proposal.status = ProposalStatus.Cancelled;
-    await refreshProposalMessage(messageObject.client, proposal);
+    const newEmbed = generateProposalEmbed(proposal);
+    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
   }
 
   // UPDATE PROPOSAL
@@ -231,14 +322,23 @@ export async function executeCommand(
       proposal.duration = duration;
       await setProposalDuration(proposal.id, duration);
     }
-    await refreshProposalMessage(messageObject.client, proposal);
+    const newEmbed = generateProposalEmbed(proposal);
+    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
   }
 
   // REFRESH PROPOSAL
   if (command.command == Command.RefreshProposal) {
     const proposal = await getProposal(command.id);
-    proposal.votes = await countVotes(command.id);
-    await refreshProposalMessage(messageObject.client, proposal);
+    let newEmbed: any;
+    if (proposal.status != ProposalStatus.Building) {
+      const votes = await countVotes(command.id);
+      const actions = await getActions(proposal.id);
+      newEmbed = generateProposalEmbed(proposal, votes, actions);
+    } else {
+      const actions = await getActions(proposal.id);
+      newEmbed = generateProposalEmbed(proposal, null, actions);
+    }
+    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
   }
 
   // RUN PROPOSAL
@@ -251,7 +351,8 @@ export async function executeCommand(
     await setExpirationDate(proposal.id, expirationDate);
     await setProposalStatus(proposal.id, ProposalStatus.Running);
     proposal.status = ProposalStatus.Running;
-    await refreshProposalMessage(messageObject.client, proposal);
+    const newEmbed = generateProposalEmbed(proposal);
+    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
     scheduleProposal(messageObject.client, proposal, proposal.duration * 1000);
   }
 
@@ -262,7 +363,118 @@ export async function executeCommand(
       throw new Error("Cannot cancel a vote on a proposal that isn't running");
     }
     await clearVote(proposal.id, messageObject.author.id);
-    proposal.votes = await countVotes(proposal.id);
-    await refreshProposalMessage(messageObject.client, proposal);
+    const votes = await countVotes(proposal.id);
+    const newEmbed = generateProposalEmbed(proposal, votes);
+    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+  }
+
+  // INSERT ACTION
+  if (command.command == Command.InsertAction) {
+    const proposal = await getProposal(command.id);
+    if (proposal.status != ProposalStatus.Building) {
+      throw new Error(
+        'Cannot add actions to an already running or closed proposal'
+      );
+    }
+    // Validate action
+    const actionValid = await validateAction(
+      messageObject.guild,
+      command.action
+    );
+    if (actionValid !== true) throw new Error(actionValid);
+    const actions = await getActions(proposal.id);
+    actions.splice(command.index, 0, command.action);
+    const actionsValid = await validateActions(messageObject.guild, actions);
+    if (actionsValid !== true) {
+      throw new Error('Removal incompatible with other actions'); // TODO: Update view to show WHICH action or HOW
+    }
+    // Insert action into DB
+    await insertAction(proposal.id, command.index, command.actionString);
+    // Update proposal view
+    const newEmbed = generateProposalEmbed(proposal, null, actions);
+    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+  }
+
+  // ADD ACTION
+  if (command.command == Command.AddAction) {
+    const proposal = await getProposal(command.id);
+    if (proposal.status != ProposalStatus.Building) {
+      throw new Error(
+        'Cannot add actions to an already running or closed proposal'
+      );
+    }
+    // Validate action
+    const actionValid = await validateAction(
+      messageObject.guild,
+      command.action
+    );
+    if (actionValid !== true) throw new Error(actionValid);
+    const actions = await getActions(proposal.id);
+    const newIndex = await getNextIndex(proposal.id);
+    actions[newIndex] = command.action;
+    // Validate new list of actions
+    const actionsValid = await validateActions(messageObject.guild, actions);
+    if (actionsValid !== true) {
+      throw new Error('Action incompatible with other actions'); // TODO: Update view to show WHICH action or HOW
+    }
+    // Create action in DB
+    await createAction(proposal.id, newIndex, command.actionString);
+    // Update proposal view
+    const newEmbed = generateProposalEmbed(proposal, null, actions);
+    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+  }
+
+  if (command.command == Command.ReplaceAction) {
+    const proposal = await getProposal(command.id);
+    if (proposal.status != ProposalStatus.Building) {
+      throw new Error(
+        'Cannot add actions to an already running or closed proposal'
+      );
+    }
+    // Validate new action
+    const newActionValid = await validateAction(
+      messageObject.guild,
+      command.action
+    );
+    if (newActionValid !== true) throw new Error(newActionValid);
+    const actions = await getActions(proposal.id);
+    if (command.index >= actions.length) {
+      throw new Error('Invalid index');
+    }
+    actions[command.index] = command.action;
+    // Validate new list of actions
+    const actionsValid = await validateActions(messageObject.guild, actions);
+    if (actionsValid !== true) {
+      throw new Error('Action incompatible with other actions'); // TODO: Update view to show WHICH action or HOW
+    }
+    // Replace action in DB
+    await replaceAction(proposal.id, command.index, command.actionString);
+    // Update proposal view
+    const newEmbed = generateProposalEmbed(proposal, null, actions);
+    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+  }
+
+  if (command.command == Command.RemoveAction) {
+    const proposal = await getProposal(command.id);
+    if (proposal.status != ProposalStatus.Building) {
+      throw new Error(
+        'Cannot add actions to an already running or closed proposal'
+      );
+    }
+    // Validate new list of actions
+    const actions = await getActions(proposal.id);
+    if (command.index >= actions.length) {
+      throw new Error('Invalid index');
+    }
+    actions.splice(command.index, 1);
+    const actionsValid = await validateActions(messageObject.guild, actions);
+    if (actionsValid !== true) {
+      throw new Error('Removal incompatible with other actions'); // TODO: Update view to show WHICH action or HOW
+    }
+    // Remove action from db
+    await removeAction(proposal.id, command.index);
+    // Update proposal view
+    const newEmbed = generateProposalEmbed(proposal, null, actions);
+    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
   }
 }

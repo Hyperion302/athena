@@ -40,7 +40,7 @@ Opens the proposal to voting. NOTE: No changes to the proposal will be allowed a
 
 `role`
 
-## Change assignments
+## Change role assignment
 
 `role`
 `users*`
@@ -55,7 +55,7 @@ Opens the proposal to voting. NOTE: No changes to the proposal will be allowed a
 `role`\
 `users*`
 
-## Change permissions
+## Change role permissions
 
 `role`\
 `permissions*`
@@ -70,19 +70,25 @@ Opens the proposal to voting. NOTE: No changes to the proposal will be allowed a
 `role`\
 `permissions*`
 
-## Change permissions override
+## Change permission override
 
 `channel`\
 `subject`\
 `permissions*`
 
-## Allow permissions override - Shorthand for Change permissions override for only allows
+## Allow permission override - Shorthand for Change permissions override for only allows
 
 `channel`\
 `subject`\
 `permissions*`
 
-## Prohibit permissions - Shorthand for Change permissions override for only prohibits
+## Prohibit permission override - Shorthand for Change permissions override for only prohibits
+
+`channel`\
+`subject`\
+`permissions*`
+
+## Unset permission override - Shorthand for Change permissions override for only unsets
 
 `channel`\
 `subject`\
@@ -109,6 +115,7 @@ Opens the proposal to voting. NOTE: No changes to the proposal will be allowed a
 ## Create channel
 
 `name`
+`type`
 
 ## Destroy channel
 
@@ -116,6 +123,12 @@ Opens the proposal to voting. NOTE: No changes to the proposal will be allowed a
 
 ## Change server setting
 
+`setting`
+`value`
+
+## Change channel setting
+
+`channel`
 `setting`
 `value`
 
@@ -130,7 +143,7 @@ i339838865370120192 - ID\
 
 +Permission - Allow\
 -Permission - Prohibit\
-~Permission - Default (only used by overrides)
+~Permission - Unset (only used by overrides)
 
 # Example commands to make a proposal
 
@@ -204,4 +217,4 @@ Vote permission: A custom permission to allow or prohibit members from voting
 
 # Future fixes
 
-Error handling
+Error handling & Fault Tolerance: Action validation should gracefully fail and properly inform the user where exactly the error occured. Failures during execution should also gracefully fail and the user should be allowed to retry execution.

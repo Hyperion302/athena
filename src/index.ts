@@ -66,6 +66,8 @@ client.on('message', async (message) => {
       return;
     }
 
+    if (!parsedCommand) return;
+
     // Execute command
     try {
       await executeCommand(parsedCommand, message);
@@ -104,8 +106,9 @@ client.on('messageReactionAdd', async (reaction, user) => {
     vote = Vote.Yes;
   } else return;
   await addVote(proposal.id, user.id, vote);
-  proposal.votes = await countVotes(proposal.id);
-  await refreshProposalMessage(client, proposal);
+  const votes = await countVotes(proposal.id);
+  const embed = generateProposalEmbed(proposal, votes);
+  await refreshProposalMessage(client, proposal, embed);
 });
 
 async function onSingleDelete(message: Message) {

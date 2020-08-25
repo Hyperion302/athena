@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "array-flat-polyfill": "^1.0.1",
+    "chevrotain": "^7.0.1",
     "discord.js": "^12.2.0",
     "knex": "^0.21.4",
     "mysql2": "^2.1.0",

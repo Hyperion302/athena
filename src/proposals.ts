@@ -1,5 +1,7 @@
 import { knex } from './db';
 import { Message, Client, TextChannel, Channel } from 'discord.js';
+import { tAction } from './actionParser';
+import { actionAsHumanReadable } from './actions';
 
 // Global list of running intervals.  This
 // list is populated at start time with data from
@@ -41,10 +43,11 @@ export interface Proposal {
   message: string;
   server: string;
   channel: string;
-  votes?: {
-    [Vote.Yes]: number;
-    [Vote.No]: number;
-  };
+}
+
+export interface Votes {
+  [Vote.Yes]: number;
+  [Vote.No]: number;
 }
 
 function getDurationString(duration: number): string {
@@ -61,86 +64,88 @@ export async function getMessageObject(
 ): Promise<Message> {
   const guild = client.guilds.resolve(proposal.server);
   const channel = guild.channels.resolve(proposal.channel) as TextChannel;
-  let proposalMessage = channel.messages.cache.get(proposal.message);
-  if (!proposalMessage) {
-    await channel.messages.fetch();
-    proposalMessage = channel.messages.cache.get(proposal.message);
-  }
-  return proposalMessage;
+  return await channel.messages.fetch(proposal.message);
 }
 
 export async function refreshProposalMessage(
   client: Client,
-  proposal: Proposal
+  proposal: Proposal,
+  embed: any
 ): Promise<Message> {
   const proposalMessage = await getMessageObject(client, proposal);
-  const refreshedEmbed = generateProposalEmbed(proposal);
-  await proposalMessage.edit(refreshedEmbed);
+  await proposalMessage.edit(embed);
   return proposalMessage;
 }
 
-export function generateProposalEmbed(proposal: Proposal): any {
-  let color: number;
-  if (proposal.status == ProposalStatus.Building) {
-    color = ProposalColor.Gray;
-  }
-
-  if (proposal.status == ProposalStatus.Running) {
-    color = ProposalColor.Blue;
-  }
-  if (proposal.votes) {
-    if (
-      proposal.status == ProposalStatus.Closed &&
-      proposal.votes[Vote.Yes] > proposal.votes[Vote.No]
-    ) {
-      color = ProposalColor.Green;
-    }
-    if (
-      proposal.status == ProposalStatus.Closed &&
-      proposal.votes[Vote.Yes] <= proposal.votes[Vote.No]
-    ) {
-      color = ProposalColor.Red;
-    }
-  }
-  if (proposal.status == ProposalStatus.Cancelled) {
-    color = ProposalColor.Black;
-  }
-
-  return {
-    embed: {
-      description: proposal.description,
-      color: color,
-      timestamp: proposal.createdOn.toISOString(),
-      footer: {
-        text: `Proposal ${proposal.id}`,
-      },
-      title: proposal.name,
-      fields: [
-        {
-          name: 'Duration',
-          value: getDurationString(proposal.duration),
-        },
-        {
-          name: 'Author',
-          value: `<@!${proposal.author}>`,
-        },
-        ...(proposal.votes
-          ? [
-              {
-                name: '👍',
-                value: proposal.votes[Vote.Yes],
-                inline: true,
-              },
-              {
-                name: '👎',
-                value: proposal.votes[Vote.No],
-                inline: true,
-              },
-            ]
-          : []),
-      ],
+export function generateProposalEmbed(
+  proposal: Proposal,
+  votes?: Votes,
+  actions?: tAction[]
+): any {
+  const embed: any = {
+    description: proposal.description,
+    color: 0,
+    timestamp: proposal.createdOn.toISOString(),
+    footer: {
+      text: `Proposal ${proposal.id}`,
     },
+    title: proposal.name,
+    fields: [],
   };
+  switch (proposal.status) {
+    case ProposalStatus.Building:
+      embed.color = ProposalColor.Gray;
+      break;
+    case ProposalStatus.Running:
+      embed.color = ProposalColor.Blue;
+      break;
+    case ProposalStatus.Closed:
+      if (votes) {
+        if (votes[Vote.Yes] > votes[Vote.No]) {
+          embed.color = ProposalColor.Green;
+        } else {
+          embed.color = ProposalColor.Red;
+        }
+      } else {
+        embed.color = ProposalColor.Black;
+      }
+      break;
+    case ProposalStatus.Cancelled:
+      embed.color = ProposalColor.Black;
+      break;
+  }
+
+  if (votes) {
+    embed.fields.push(
+      {
+        name: '👍',
+        value: votes[Vote.Yes],
+        inline: true,
+      },
+      {
+        name: '👎',
+        value: votes[Vote.No],
+        inline: true,
+      }
+    );
+  }
+
+  if (actions) {
+    let actionString = '';
+    actions.forEach(
+      (action, index) =>
+        (actionString = `${actionString}\n${index + 1}. ${actionAsHumanReadable(
+          action
+        )}`)
+    );
+    embed.fields.push({
+      name: 'Actions',
+      value: actionString,
+      inline: false,
+    });
+  }
+
+  return { embed };
 }
 
 function schemaToObj(schema: any): Proposal {
@@ -231,6 +236,8 @@ export async function createProposal(
 }
 
 export async function deleteProposal(id: string) {
+  await knex.table('vote').where('proposal_id', id).del();
+  await knex.table('action').where('proposal_id', id).del();
   await knex.table('proposal').where('id', id).del();
 }
 
@@ -306,8 +313,8 @@ export async function handleProposalExpire(client: Client, id: string) {
   }
   await setProposalStatus(id, ProposalStatus.Closed);
   const proposal = await getProposal(id);
-  proposal.votes = await countVotes(id);
-  await refreshProposalMessage(client, proposal);
+  const newEmbed = await generateProposalEmbed(proposal, votes);
+  await refreshProposalMessage(client, proposal, newEmbed);
 }
 
 export async function getProposal(id: string): Promise<Proposal> {
