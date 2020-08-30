@@ -1,5 +1,5 @@
 import Knex from 'knex';
-export var knex: Knex;
+export let knex: Knex;
 
 export function connectToDB(user: string, pass: string, db: string) {
   try {
@@ -7,7 +7,7 @@ export function connectToDB(user: string, pass: string, db: string) {
       client: 'mysql2',
       connection: {
         host: '127.0.0.1',
-        user: user,
+        user,
         password: pass,
         database: db,
         supportBigNumbers: true,

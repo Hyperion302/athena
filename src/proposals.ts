@@ -184,17 +184,17 @@ export function generateProposalEmbed(
 
 function schemaToObj(schema: any): Proposal {
   return {
-    author: schema['author_id'],
-    id: schema['id'],
-    createdOn: schema['created_on'],
-    expiresOn: schema['expires_on'],
-    name: schema['name'],
-    description: schema['description'],
-    status: schema['status'],
-    message: schema['message_id'],
-    server: schema['server_id'],
-    channel: schema['channel_id'],
-    duration: schema['duration'],
+    author: schema.author_id,
+    id: schema.id,
+    createdOn: schema.created_on,
+    expiresOn: schema.expires_on,
+    name: schema.name,
+    description: schema.description,
+    status: schema.status,
+    message: schema.message_id,
+    server: schema.server_id,
+    channel: schema.channel_id,
+    duration: schema.duration,
   };
 }
 
@@ -306,7 +306,7 @@ export async function setProposalStatus(id: string, status: ProposalStatus) {
   await knex
     .table('proposal')
     .update({
-      status: status,
+      status,
     })
     .where('id', id);
 }

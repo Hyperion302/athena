@@ -11,21 +11,13 @@ import {
 } from './actionParser';
 import {
   Guild,
-  User,
   Permissions,
-  Client,
   Channel,
   Role,
   GuildMember,
-  TextBasedChannel,
-  TextChannel,
-  VoiceChannel,
   GuildChannel,
-  PermissionOverwrites,
-  PermissionOverwriteOptions,
 } from 'discord.js';
 import { knex } from './db';
-import { parseDuration } from './commands';
 import { getDurationString } from './proposals';
 
 // Max sizes
@@ -911,17 +903,17 @@ export async function executeActions(
         action.subject
       );
       const subjectPos = relativeTo.position;
-      let targetPos = 0;
+      let newPos = 0;
       switch (action.direction) {
         case MoveRelativePosition.Above:
-          targetPos = subjectPos + 1;
+          newPos = subjectPos; // Setting the same position will force the stack downwards
           break;
         case MoveRelativePosition.Below:
-          targetPos = subjectPos - 1;
-          targetPos = Math.max(targetPos, 0); // Clamp at 0
+          newPos = subjectPos - 1;
+          newPos = Math.max(newPos, 0); // Clamp at 0
           break;
       }
-      await role.setPosition(targetPos);
+      await role.setPosition(newPos);
     }
     if (
       action.action == Action.AddPermissionOverrideOn ||
@@ -990,18 +982,18 @@ export async function executeActions(
         resourceList,
         action.subject
       );
-      const channelSubjectPos = relativeTo.position;
-      let targetPos = 0;
+      const subjectPos = relativeTo.position;
+      let newPos = 0;
       switch (action.direction) {
         case MoveRelativePosition.Above:
-          targetPos = channelSubjectPos + 1;
+          newPos = subjectPos - 1;
+          newPos = Math.max(newPos, 0);
           break;
         case MoveRelativePosition.Below:
-          targetPos = channelSubjectPos - 1;
-          targetPos = Math.max(targetPos, 0); // Clamp at 0
+          newPos = subjectPos;
           break;
       }
-      await channel.setPosition(targetPos);
+      await channel.setPosition(newPos);
     }
     if (action.action == Action.DestroyChannel) {
       const channel = await resolveChannelReference(

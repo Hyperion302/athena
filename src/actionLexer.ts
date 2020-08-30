@@ -123,6 +123,11 @@ const MoveChannel = createToken({
   pattern: new RegExp(Action.MoveChannel),
   longer_alt: PlainText,
 });
+const MoveRole = createToken({
+  name: Action.MoveRole,
+  pattern: new RegExp(Action.MoveRole),
+  longer_alt: PlainText,
+});
 
 // Permissions
 
@@ -351,7 +356,7 @@ const ExactUsername = createToken({
   name: 'ExactUsername',
   pattern: /".+#\d+"/,
 });
-const ExactName = createToken({ name: 'ExactName', pattern: /".+"/ });
+const ExactName = createToken({ name: 'ExactName', pattern: /"[^"]+"/ });
 const ID = createToken({ name: 'ID', pattern: /i\d+/ });
 const RoleMention = createToken({ name: 'RoleMention', pattern: /<@&\d+>/ });
 const UserMention = createToken({ name: 'UserMention', pattern: /<@!?\d+>/ });
@@ -381,6 +386,7 @@ const allTokens = [
   GrantRole,
   RevokeRole,
   MoveChannel,
+  MoveRole,
   AllowPermissions,
   ProhibitPermissions,
   AddPermissionOverrideOn,

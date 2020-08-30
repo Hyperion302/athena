@@ -28,9 +28,9 @@ async function start() {
   );
   // Connect to DB
   connectToDB(
-    configuration['SQLUser'],
-    configuration['SQLPass'],
-    configuration['SQLDB']
+    configuration.SQLUser,
+    configuration.SQLPass,
+    configuration.SQLDB
   );
   // Build timer table
   // NOTE: I've determined that there could be a ~10 second error here,
@@ -44,7 +44,7 @@ async function start() {
       `Scheduled proposal ${proposal.id} for closure in ${remainingDuration} milliseconds`
     );
   });
-  connectToDiscord(configuration['token']);
+  connectToDiscord(configuration.token);
 }
 
 client.on('ready', () => {
