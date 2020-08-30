@@ -16,8 +16,10 @@ import {
   Proposal,
   countVotes,
   refreshProposalMessage,
+  gIntervalList,
 } from './proposals';
 import { Message } from 'discord.js';
+import { getAction, getActions } from './actions';
 
 // Startup procedure
 async function start() {
@@ -113,24 +115,21 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
 async function onSingleDelete(message: Message) {
   // If the message is partial, it doesn't matter.  I only use it's ID and channel (always cached) anyway
-  // If a noncancelled proposal is deleted, resend it and mark it cancelled
-  // If a cancelled proposal is deleted, delete it permanently
+  // If the proposal is running, cancel and resend
+  // If it's not running, delete
   const proposal = await getProposalByMessage(message.id);
-  if (
-    [
-      ProposalStatus.Cancelled,
-      ProposalStatus.Failed,
-      ProposalStatus.Passed,
-    ].includes(proposal.status)
-  ) {
-    await deleteProposal(proposal.id);
-  } else {
+  if (proposal.status == ProposalStatus.Running) {
+    if (gIntervalList[proposal.id]) clearTimeout(gIntervalList[proposal.id]);
     await setProposalStatus(proposal.id, ProposalStatus.Cancelled);
     proposal.status = ProposalStatus.Cancelled;
+    const votes = await countVotes(proposal.id);
+    const actions = await getActions(proposal.id);
     const newMessage = await message.channel.send(
-      generateProposalEmbed(proposal)
+      generateProposalEmbed(proposal, votes, actions)
     );
     await setProposalMessage(proposal.id, newMessage);
+  } else {
+    await deleteProposal(proposal.id);
   }
 }
 

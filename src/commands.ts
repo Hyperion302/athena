@@ -13,6 +13,10 @@ import {
   countVotes,
   clearVote,
   handleProposalExpire,
+  gIntervalList,
+  deleteProposal,
+  getProposalByMessage,
+  getMessageObject,
 } from './proposals';
 import { Message } from 'discord.js';
 import { tAction, parseAction } from './actionParser';
@@ -30,6 +34,7 @@ import {
 enum Command {
   CreateProposal = 'create proposal',
   CancelProposal = 'cancel proposal',
+  DestroyProposal = 'destroy proposal',
   UpdateProposal = 'update proposal',
   RefreshProposal = 'refresh proposal',
   AddAction = 'add action',
@@ -51,6 +56,11 @@ interface CreateProposalCommand {
 
 interface CancelProposalCommand {
   command: Command.CancelProposal;
+  id: string;
+}
+
+interface DestroyProposalCommand {
+  command: Command.DestroyProposal;
   id: string;
 }
 
@@ -119,6 +129,7 @@ interface RetryProposalCommand {
 type tCommand =
   | CreateProposalCommand
   | CancelProposalCommand
+  | DestroyProposalCommand
   | UpdateProposalCommand
   | RefreshProposalCommand
   | RunProposalCommand
@@ -175,6 +186,16 @@ export function parseCommand(command: string, channel: string): tCommand {
       .split(' ');
     return {
       command: Command.CancelProposal,
+      id: params[0],
+    };
+  }
+  if (command.startsWith(Command.DestroyProposal)) {
+    const params = command
+      .slice(Command.DestroyProposal.length)
+      .trim()
+      .split(' ');
+    return {
+      command: Command.DestroyProposal,
       id: params[0],
     };
   }
@@ -337,9 +358,29 @@ export async function executeCommand(
     if (proposal.status != ProposalStatus.Running) {
       throw new Error('A proposal must be running to be cancelled');
     }
+    if (gIntervalList[command.id]) clearTimeout(gIntervalList[command.id]);
     await setProposalStatus(proposal.id, ProposalStatus.Cancelled);
     proposal.status = ProposalStatus.Cancelled;
     await refreshProposalMessage(messageObject.client, proposal, true, true);
+  }
+
+  // DESTROY PROPOSAL
+  if (command.command == Command.DestroyProposal) {
+    const proposal = await getProposal(command.id);
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
+    if (proposal.author != messageObject.author.id) {
+      throw new Error('Only the proposal author can destroy a proposal');
+    }
+    if (proposal.status == ProposalStatus.Running) {
+      throw new Error(
+        'A running proposal must be cancelled before being destroyed'
+      );
+    }
+    await deleteProposal(command.id);
+    const message = await getMessageObject(messageObject.client, proposal);
+    await message.delete();
   }
 
   // UPDATE PROPOSAL
