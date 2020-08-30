@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
-import { parseCommand, executeCommand } from './commands';
-import { connectToDB, knex } from './db';
+import { parseCommand, executeCommand } from './command';
+import { connectToDB } from './db';
 import { connectToDiscord, client } from './client';
 import {
   getProposalByMessage,
@@ -17,9 +17,9 @@ import {
   countVotes,
   refreshProposalMessage,
   gIntervalList,
-} from './proposals';
+} from './proposal';
 import { Message } from 'discord.js';
-import { getAction, getActions } from './actions';
+import { getActions } from './action';
 
 // Startup procedure
 async function start() {

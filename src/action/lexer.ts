@@ -1,5 +1,5 @@
 import * as chevrotain from 'chevrotain';
-import { Action } from './actionParser';
+import { Action } from '.';
 
 const createToken = chevrotain.createToken;
 
