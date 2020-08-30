@@ -85,7 +85,7 @@ function subjectAsHumanReadable(ref: ResourceReference): string {
   if (ref.type == ReferenceType.FullName) {
     return ref.name;
   }
-  if (ref.type == ReferenceType.Output) {
+  if (ref.type == ReferenceType.Pointer) {
     return `role created in action #${ref.index}`;
   }
   if (ref.type == ReferenceType.ID) {
@@ -280,7 +280,7 @@ function roleReferenceAsHumanReadable(ref: ResourceReference): string {
   if (ref.type == ReferenceType.ID) {
     return `<@&${ref.id}>`;
   }
-  if (ref.type == ReferenceType.Output) {
+  if (ref.type == ReferenceType.Pointer) {
     return `role created in action #${ref.index + 1}`;
   }
   return '<error>';
@@ -293,7 +293,7 @@ function channelReferenceAsHumanReadable(ref: ResourceReference): string {
   if (ref.type == ReferenceType.ID) {
     return `<#${ref.id}>`;
   }
-  if (ref.type == ReferenceType.Output) {
+  if (ref.type == ReferenceType.Pointer) {
     return `channel created in action #${ref.index + 1}`;
   }
   return '<error>';

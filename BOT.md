@@ -27,7 +27,7 @@ Note on durations: The format is \<number>\<unit>. Currently acceptable units ar
 
 # Actions
 
-Actions are added to proposals to make them do things (this is optional, however, and Direkt can be used as a polling system aswell). **The order of actions is important, since they are executed in order**.
+Actions are added to proposals to make them do things (this is optional, however, and Direkt can be used as a polling system when no actions are added to proposals). **The order of actions is important, since they are executed in the order they are shown**.
 
 ## Action commands
 
@@ -36,7 +36,7 @@ Actions are added to proposals to make them do things (this is optional, however
 - replace action \<proposal ID> \<action position> \<action>
 - remove action \<proposal ID> \<action position>
 
-## Parameter types
+## Reference types
 
 When writing an action, there are 5 types of parameters.
 
@@ -44,22 +44,24 @@ When writing an action, there are 5 types of parameters.
 2. Full text: "General 1"
 3. Mention: #images-3, @Jonas
 4. ID: i118715872973029376
-5. Reference: \*3
+5. Pointer: \*3
 
 Users can be input with username or ID.
 
-Channels can be input with full text, mention (only text channels), reference, or ID.
+Channels can be input with full text, mention (only text channels), pointer, or ID.
 
-Roles can be input with full text, mention, reference, or ID.
+Roles can be input with full text, mention, pointer, or ID.
 
 When actions ask for names or descriptions (long pieces of text that do not reference anything), quotes are not accepted.
 
 ## Action types
 
-## References
+## Pointers
 
-Advanced users of the bot may ask, _"If I want to both create a channel and change it's topic in the same proposal, how can I mention a channel that doesn't exist yet?"_. This problem introduces _references_. The `create channel` and `create role` actions both can be _referenced_ by other actions as inputs. Instead of mentioning or naming the channel, put an \* and the position of the outputing action. For example, to answer the previous question, these actions would create a channel and set it's topic:
+Advanced users of the bot may ask, _"If I want to both create a channel and change it's topic in the same proposal, how can I mention a channel that doesn't exist yet?"_. This problem introduces _pointers_. The `create channel` and `create role` actions both can be _pointed to_ by other actions as inputs. Instead of mentioning or naming the channel, put an \* and the position of the outputing action. For example, to answer the previous question, these actions would create a channel and set it's topic:
 
 `1. create channel text images-2`
 
 `2. change channel setting *1 topic Only for images!`
+
+Here the second action "points" to the result of the first action using `*1`

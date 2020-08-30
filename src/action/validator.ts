@@ -40,7 +40,7 @@ async function validateRoleReference(
     const role = await server.roles.fetch(ref.id);
     return !!role;
   }
-  if (ref.type == ReferenceType.Output) {
+  if (ref.type == ReferenceType.Pointer) {
     return true; // Validation of output reference occurs elsewhere
   }
   return false;
@@ -60,7 +60,7 @@ function validateChannelReference(
     const channel = server.channels.resolve(ref.id);
     return !!channel;
   }
-  if (ref.type == ReferenceType.Output) {
+  if (ref.type == ReferenceType.Pointer) {
     return true; // Validation of output reference occurs elsewhere
   }
   return false;
@@ -95,7 +95,7 @@ async function validateUserOrRoleReference(
     const role = server.roles.cache.find((role) => role.name == ref.name);
     return !!role;
   }
-  if (ref.type == ReferenceType.Output) {
+  if (ref.type == ReferenceType.Pointer) {
     return true; // Validation of output reference occurs elsewhere
   }
   return false;
@@ -242,7 +242,7 @@ export async function validateActions(
       case Action.ChangeRolePermissions:
       case Action.ChangeRoleSetting:
       case Action.MoveRole:
-        if (action.role.type == ReferenceType.Output) {
+        if (action.role.type == ReferenceType.Pointer) {
           if (action.role.index >= actions.length) {
             invalidActionIndices.push(index);
             break;
@@ -256,7 +256,7 @@ export async function validateActions(
       // Actions with both a channel and a subject
       case Action.AddPermissionOverrideOn:
       case Action.ChangePermissionOverrideOn:
-        if (action.channel.type == ReferenceType.Output) {
+        if (action.channel.type == ReferenceType.Pointer) {
           if (action.channel.index >= actions.length) {
             invalidActionIndices.push(index);
             break;
@@ -266,7 +266,7 @@ export async function validateActions(
             invalidActionIndices.push(index);
           }
         }
-        if (action.subject.type == ReferenceType.Output) {
+        if (action.subject.type == ReferenceType.Pointer) {
           const referencedAction = actions[action.subject.index];
           // Since the reference is an `Output`, it *must* be referencing
           // a role, not a user
@@ -280,7 +280,7 @@ export async function validateActions(
       case Action.MoveChannel:
       case Action.DestroyChannel:
       case Action.RemovePermissionOverrideOn:
-        if (action.channel.type == ReferenceType.Output) {
+        if (action.channel.type == ReferenceType.Pointer) {
           if (action.channel.index >= actions.length) {
             invalidActionIndices.push(index);
             break;

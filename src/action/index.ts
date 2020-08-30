@@ -234,7 +234,7 @@ export type tAction =
   | ChangeChannelSettingAction;
 
 export enum ReferenceType {
-  Output,
+  Pointer,
   ID,
   FullName,
   Username,
@@ -252,7 +252,7 @@ interface IDResourceReference {
 }
 
 interface OutputResourceReference {
-  type: ReferenceType.Output;
+  type: ReferenceType.Pointer;
   index: number;
 }
 

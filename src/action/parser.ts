@@ -192,7 +192,7 @@ function parseChannelToken(token: IToken): ResourceReference {
     };
   } else if (token.tokenType.name == 'OutputReference') {
     return {
-      type: ReferenceType.Output,
+      type: ReferenceType.Pointer,
       index: parseInt(token.image.slice(1), 10) - 1,
     };
   } else if (token.tokenType.name == 'ExactName') {
@@ -218,7 +218,7 @@ function parseRoleToken(token: IToken): ResourceReference {
     };
   } else if (token.tokenType.name == 'OutputReference') {
     return {
-      type: ReferenceType.Output,
+      type: ReferenceType.Pointer,
       index: parseInt(token.image.slice(1), 10) - 1,
     };
   } else if (token.tokenType.name == 'ExactName') {
@@ -249,7 +249,7 @@ function parseSubjectToken(token: IToken): ResourceReference {
     };
   } else if (token.tokenType.name == 'OutputReference') {
     return {
-      type: ReferenceType.Output,
+      type: ReferenceType.Pointer,
       index: parseInt(token.image.slice(1), 10) - 1,
     };
   } else if (token.tokenType.name == 'ExactName') {

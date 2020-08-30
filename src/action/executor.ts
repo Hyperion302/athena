@@ -117,7 +117,7 @@ async function resolveChannelReference(
   if (ref.type == ReferenceType.ID) {
     return server.channels.resolve(ref.id);
   }
-  if (ref.type == ReferenceType.Output) {
+  if (ref.type == ReferenceType.Pointer) {
     const channel = resourceList[ref.index];
     if (!(channel instanceof GuildChannel) || !channel) {
       throw new Error('Invalid reference');
@@ -139,7 +139,7 @@ async function resolveRoleReference(
   if (ref.type == ReferenceType.ID) {
     return await server.roles.fetch(ref.id);
   }
-  if (ref.type == ReferenceType.Output) {
+  if (ref.type == ReferenceType.Pointer) {
     const role = resourceList[ref.index];
     if (!(role instanceof Role) || !role) {
       throw new Error('Invalid reference');
@@ -180,7 +180,7 @@ async function resolveUserOrRoleReference(
     );
     return user;
   }
-  if (ref.type == ReferenceType.Output) {
+  if (ref.type == ReferenceType.Pointer) {
     const role = resourceList[ref.index];
     if (!(role instanceof Role) || !role) {
       throw new Error('Invalid reference');
@@ -250,7 +250,7 @@ export async function executeActions(
         action.role
       );
       await role.delete();
-      if (action.role.type == ReferenceType.Output) {
+      if (action.role.type == ReferenceType.Pointer) {
         delete resourceList[action.role.index];
       }
     }
