@@ -328,6 +328,12 @@ export async function executeCommand(
   // CANCEL PROPOSAL
   if (command.command == Command.CancelProposal) {
     const proposal = await getProposal(command.id);
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
+    if (proposal.author != messageObject.author.id) {
+      throw new Error('Only the proposal author can cancel a proposal');
+    }
     if (proposal.status != ProposalStatus.Running) {
       throw new Error('A proposal must be running to be cancelled');
     }
@@ -339,8 +345,14 @@ export async function executeCommand(
   // UPDATE PROPOSAL
   if (command.command == Command.UpdateProposal) {
     const proposal = await getProposal(command.id);
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
+    if (proposal.author != messageObject.author.id) {
+      throw new Error('Only the proposal author can update a proposal');
+    }
     if (proposal.status != ProposalStatus.Building) {
-      throw new Error('Cannot modify a closed or running proposal');
+      throw new Error('You can only update a proposal that is being built');
     }
     if (command.field == 'description') {
       const description = command.value as string;
@@ -359,6 +371,9 @@ export async function executeCommand(
   // REFRESH PROPOSAL
   if (command.command == Command.RefreshProposal) {
     const proposal = await getProposal(command.id);
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
     await refreshProposalMessage(
       messageObject.client,
       proposal,
@@ -370,6 +385,12 @@ export async function executeCommand(
   // RUN PROPOSAL
   if (command.command == Command.RunProposal) {
     const proposal = await getProposal(command.id);
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
+    if (proposal.author != messageObject.author.id) {
+      throw new Error('Only the proposal author can run the proposal');
+    }
     if (proposal.status != ProposalStatus.Building) {
       throw new Error('Cannot run an already running or closed proposal');
     }
@@ -384,6 +405,9 @@ export async function executeCommand(
   // CLEAR VOTE
   if (command.command == Command.ClearVote) {
     const proposal = await getProposal(command.id);
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
     if (proposal.status != ProposalStatus.Running) {
       throw new Error("Cannot cancel a vote on a proposal that isn't running");
     }
@@ -394,6 +418,12 @@ export async function executeCommand(
   // INSERT ACTION
   if (command.command == Command.InsertAction) {
     const proposal = await getProposal(command.id);
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
+    if (proposal.author != messageObject.author.id) {
+      throw new Error('Only the proposal author can insert an action');
+    }
     if (proposal.status != ProposalStatus.Building) {
       throw new Error(
         'Cannot add actions to an already running or closed proposal'
@@ -420,6 +450,12 @@ export async function executeCommand(
   // ADD ACTION
   if (command.command == Command.AddAction) {
     const proposal = await getProposal(command.id);
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
+    if (proposal.author != messageObject.author.id) {
+      throw new Error('Only the proposal author can add an action');
+    }
     if (proposal.status != ProposalStatus.Building) {
       throw new Error(
         'Cannot add actions to an already running or closed proposal'
@@ -448,6 +484,12 @@ export async function executeCommand(
   // REPLACE ACTION
   if (command.command == Command.ReplaceAction) {
     const proposal = await getProposal(command.id);
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
+    if (proposal.author != messageObject.author.id) {
+      throw new Error('Only the proposal author can replace an action');
+    }
     if (proposal.status != ProposalStatus.Building) {
       throw new Error(
         'Cannot add actions to an already running or closed proposal'
@@ -478,6 +520,12 @@ export async function executeCommand(
   // REMOVE ACTION
   if (command.command == Command.RemoveAction) {
     const proposal = await getProposal(command.id);
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
+    if (proposal.author != messageObject.author.id) {
+      throw new Error('Only the proposal author can remove an action');
+    }
     if (proposal.status != ProposalStatus.Building) {
       throw new Error(
         'Cannot add actions to an already running or closed proposal'
@@ -506,11 +554,17 @@ export async function executeCommand(
   // RETRY PROPOSAL
   if (command.command == Command.RetryProposal) {
     const proposal = await getProposal(command.id);
-    //if (proposal.status != ProposalStatus.ExecutionError) {
-    //  throw new Error(
-    //    'Proposal must have failed to implement to start a retry'
-    //  );
-    //}
+    if (proposal.server != messageObject.guild.id) {
+      throw new Error('Proposals can only be used in their own guild');
+    }
+    if (proposal.author != messageObject.author.id) {
+      throw new Error('Only the proposal author can retry a proposal');
+    }
+    if (proposal.status != ProposalStatus.ExecutionError) {
+      throw new Error(
+        'Proposal must have failed to implement to start a retry'
+      );
+    }
     await handleProposalExpire(messageObject.client, proposal.id);
   }
 }
