@@ -1,7 +1,13 @@
 import { knex } from './db';
 import { Message, Client, TextChannel, Channel } from 'discord.js';
 import { tAction } from './actionParser';
-import { actionAsHumanReadable } from './actions';
+import {
+  actionAsHumanReadable,
+  validateAction,
+  getActions,
+  validateActions,
+  executeActions,
+} from './actions';
 
 // Global list of running intervals.  This
 // list is populated at start time with data from
@@ -14,8 +20,10 @@ export const gIntervalList: {
 export enum ProposalStatus {
   Building,
   Running,
-  Closed,
   Cancelled,
+  Passed,
+  Failed,
+  ExecutionError,
 }
 
 export enum Vote {
@@ -29,6 +37,7 @@ enum ProposalColor {
   Green = 8311585,
   Red = 13632027,
   Black = 1,
+  Orange = 14786870,
 }
 
 export interface Proposal {
@@ -50,7 +59,7 @@ export interface Votes {
   [Vote.No]: number;
 }
 
-function getDurationString(duration: number): string {
+export function getDurationString(duration: number): string {
   if (duration < 60) return `${duration} seconds`;
   if (duration < 60 * 60) return `${Math.floor(duration / 60)} minutes`;
   if (duration < 60 * 60 * 24)
@@ -70,10 +79,23 @@ export async function getMessageObject(
 export async function refreshProposalMessage(
   client: Client,
   proposal: Proposal,
-  embed: any
+  updateVotes: boolean = true,
+  updateActions: boolean = true
 ): Promise<Message> {
   const proposalMessage = await getMessageObject(client, proposal);
-  await proposalMessage.edit(embed);
+  let votes: Votes = null;
+  let actions: tAction[] = null;
+  if (updateVotes && !updateActions) {
+    votes = await countVotes(proposal.id);
+  }
+  if (!updateVotes && updateActions) {
+    actions = await getActions(proposal.id);
+  }
+  if (updateVotes && updateActions) {
+    actions = await getActions(proposal.id);
+    votes = await countVotes(proposal.id);
+  }
+  await proposalMessage.edit(generateProposalEmbed(proposal, votes, actions));
   return proposalMessage;
 }
 
@@ -90,7 +112,18 @@ export function generateProposalEmbed(
       text: `Proposal ${proposal.id}`,
     },
     title: proposal.name,
-    fields: [],
+    fields: [
+      {
+        name: 'Author',
+        value: `<@!${proposal.author}>`,
+        inline: false,
+      },
+      {
+        name: 'Duration',
+        value: getDurationString(proposal.duration),
+        inline: false,
+      },
+    ],
   };
   switch (proposal.status) {
     case ProposalStatus.Building:
@@ -99,16 +132,14 @@ export function generateProposalEmbed(
     case ProposalStatus.Running:
       embed.color = ProposalColor.Blue;
       break;
-    case ProposalStatus.Closed:
-      if (votes) {
-        if (votes[Vote.Yes] > votes[Vote.No]) {
-          embed.color = ProposalColor.Green;
-        } else {
-          embed.color = ProposalColor.Red;
-        }
-      } else {
-        embed.color = ProposalColor.Black;
-      }
+    case ProposalStatus.Passed:
+      embed.color = ProposalColor.Green;
+      break;
+    case ProposalStatus.Failed:
+      embed.color = ProposalColor.Red;
+      break;
+    case ProposalStatus.ExecutionError:
+      embed.color = ProposalColor.Orange;
       break;
     case ProposalStatus.Cancelled:
       embed.color = ProposalColor.Black;
@@ -138,11 +169,14 @@ export function generateProposalEmbed(
           action
         )}`)
     );
-    embed.fields.push({
-      name: 'Actions',
-      value: actionString,
-      inline: false,
-    });
+    // No empty fields
+    if (actionString.length) {
+      embed.fields.push({
+        name: 'Actions',
+        value: actionString,
+        inline: false,
+      });
+    }
   }
 
   return { embed };
@@ -303,17 +337,38 @@ export function scheduleProposal(
   gIntervalList[proposal.id] = interval;
 }
 
-export async function handleProposalExpire(client: Client, id: string) {
+export async function handleProposalExpire(
+  client: Client,
+  id: string
+): Promise<void> {
   delete gIntervalList[id];
 
   // Tally votes, execute actions if it passes
+  const proposal = await getProposal(id);
   const votes = await countVotes(id);
   if (votes[Vote.Yes] > votes[Vote.No]) {
     // Pass, run actions
+    const actions = await getActions(id);
+    const validation = await validateActions(
+      client.guilds.resolve(proposal.server),
+      actions
+    );
+    if (validation !== true) {
+      proposal.status = ProposalStatus.ExecutionError;
+    } else {
+      proposal.status = ProposalStatus.Passed;
+      try {
+        await executeActions(client.guilds.resolve(proposal.server), actions);
+      } catch (e) {
+        proposal.status = ProposalStatus.ExecutionError;
+        console.warn(e);
+      }
+    }
+  } else {
+    proposal.status = ProposalStatus.Failed;
   }
-  await setProposalStatus(id, ProposalStatus.Closed);
-  const proposal = await getProposal(id);
   const newEmbed = await generateProposalEmbed(proposal, votes);
+  await setProposalStatus(proposal.id, proposal.status);
   await refreshProposalMessage(client, proposal, newEmbed);
 }
 

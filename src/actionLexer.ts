@@ -118,6 +118,11 @@ const CreateChannel = createToken({
   pattern: new RegExp(Action.CreateChannel),
   longer_alt: PlainText,
 });
+const MoveChannel = createToken({
+  name: Action.MoveChannel,
+  pattern: new RegExp(Action.MoveChannel),
+  longer_alt: PlainText,
+});
 
 // Permissions
 
@@ -304,6 +309,11 @@ const ContentFilter = createToken({
   pattern: /content filter/,
   longer_alt: PlainText,
 });
+const Topic = createToken({
+  name: 'Topic',
+  pattern: /topic/,
+  longer_alt: PlainText,
+});
 
 // Other
 
@@ -370,6 +380,7 @@ const allTokens = [
   ChangeRoleAssignment,
   GrantRole,
   RevokeRole,
+  MoveChannel,
   AllowPermissions,
   ProhibitPermissions,
   AddPermissionOverrideOn,
@@ -417,6 +428,7 @@ const allTokens = [
   AFKChannel,
   AFKTimeout,
   ContentFilter,
+  Topic,
   Above,
   Below,
   Text,

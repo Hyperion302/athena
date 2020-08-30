@@ -117,8 +117,11 @@ async function onSingleDelete(message: Message) {
   // If a cancelled proposal is deleted, delete it permanently
   const proposal = await getProposalByMessage(message.id);
   if (
-    proposal.status == ProposalStatus.Cancelled ||
-    proposal.status == ProposalStatus.Closed
+    [
+      ProposalStatus.Cancelled,
+      ProposalStatus.Failed,
+      ProposalStatus.Passed,
+    ].includes(proposal.status)
   ) {
     await deleteProposal(proposal.id);
   } else {

@@ -12,6 +12,7 @@ import {
   scheduleProposal,
   countVotes,
   clearVote,
+  handleProposalExpire,
 } from './proposals';
 import { Message } from 'discord.js';
 import { tAction, parseAction } from './actionParser';
@@ -37,6 +38,8 @@ enum Command {
   InsertAction = 'insert action',
   RunProposal = 'run proposal',
   ClearVote = 'clear vote',
+  ResendProposal = 'resend proposal',
+  RetryProposal = 'retry proposal',
 }
 
 interface CreateProposalCommand {
@@ -102,6 +105,16 @@ interface InsertActionCommand {
   actionString: string;
 }
 
+interface ResendProposalCommand {
+  command: Command.ResendProposal;
+  id: string;
+}
+
+interface RetryProposalCommand {
+  command: Command.RetryProposal;
+  id: string;
+}
+
 // Convenience union type
 type tCommand =
   | CreateProposalCommand
@@ -113,7 +126,9 @@ type tCommand =
   | AddActionCommand
   | ReplaceActionCommand
   | RemoveActionCommand
-  | InsertActionCommand;
+  | InsertActionCommand
+  | ResendProposalCommand
+  | RetryProposalCommand;
 
 export function parseDuration(duration: string): number {
   const unit = duration.slice(-1);
@@ -267,6 +282,26 @@ export function parseCommand(command: string, channel: string): tCommand {
       actionString,
     };
   }
+  if (command.startsWith(Command.ResendProposal)) {
+    const params = command
+      .slice(Command.ResendProposal.length)
+      .trim()
+      .split(' ');
+    return {
+      command: Command.ResendProposal,
+      id: params[0],
+    };
+  }
+  if (command.startsWith(Command.RetryProposal)) {
+    const params = command
+      .slice(Command.RetryProposal.length)
+      .trim()
+      .split(' ');
+    return {
+      command: Command.RetryProposal,
+      id: params[0],
+    };
+  }
 }
 
 export async function executeCommand(
@@ -293,16 +328,12 @@ export async function executeCommand(
   // CANCEL PROPOSAL
   if (command.command == Command.CancelProposal) {
     const proposal = await getProposal(command.id);
-    if (
-      proposal.status == ProposalStatus.Cancelled ||
-      proposal.status == ProposalStatus.Closed
-    ) {
-      throw new Error('Cannot cancel an already closed or cancelled proposal');
+    if (proposal.status != ProposalStatus.Running) {
+      throw new Error('A proposal must be running to be cancelled');
     }
     await setProposalStatus(proposal.id, ProposalStatus.Cancelled);
     proposal.status = ProposalStatus.Cancelled;
-    const newEmbed = generateProposalEmbed(proposal);
-    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+    await refreshProposalMessage(messageObject.client, proposal, true, true);
   }
 
   // UPDATE PROPOSAL
@@ -322,23 +353,18 @@ export async function executeCommand(
       proposal.duration = duration;
       await setProposalDuration(proposal.id, duration);
     }
-    const newEmbed = generateProposalEmbed(proposal);
-    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+    await refreshProposalMessage(messageObject.client, proposal, false, true);
   }
 
   // REFRESH PROPOSAL
   if (command.command == Command.RefreshProposal) {
     const proposal = await getProposal(command.id);
-    let newEmbed: any;
-    if (proposal.status != ProposalStatus.Building) {
-      const votes = await countVotes(command.id);
-      const actions = await getActions(proposal.id);
-      newEmbed = generateProposalEmbed(proposal, votes, actions);
-    } else {
-      const actions = await getActions(proposal.id);
-      newEmbed = generateProposalEmbed(proposal, null, actions);
-    }
-    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+    await refreshProposalMessage(
+      messageObject.client,
+      proposal,
+      proposal.status != ProposalStatus.Building,
+      true
+    );
   }
 
   // RUN PROPOSAL
@@ -351,8 +377,7 @@ export async function executeCommand(
     await setExpirationDate(proposal.id, expirationDate);
     await setProposalStatus(proposal.id, ProposalStatus.Running);
     proposal.status = ProposalStatus.Running;
-    const newEmbed = generateProposalEmbed(proposal);
-    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+    await refreshProposalMessage(messageObject.client, proposal, true, true);
     scheduleProposal(messageObject.client, proposal, proposal.duration * 1000);
   }
 
@@ -363,9 +388,7 @@ export async function executeCommand(
       throw new Error("Cannot cancel a vote on a proposal that isn't running");
     }
     await clearVote(proposal.id, messageObject.author.id);
-    const votes = await countVotes(proposal.id);
-    const newEmbed = generateProposalEmbed(proposal, votes);
-    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+    await refreshProposalMessage(messageObject.client, proposal, true, true);
   }
 
   // INSERT ACTION
@@ -391,8 +414,7 @@ export async function executeCommand(
     // Insert action into DB
     await insertAction(proposal.id, command.index, command.actionString);
     // Update proposal view
-    const newEmbed = generateProposalEmbed(proposal, null, actions);
-    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+    await refreshProposalMessage(messageObject.client, proposal, false, true);
   }
 
   // ADD ACTION
@@ -420,10 +442,10 @@ export async function executeCommand(
     // Create action in DB
     await createAction(proposal.id, newIndex, command.actionString);
     // Update proposal view
-    const newEmbed = generateProposalEmbed(proposal, null, actions);
-    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+    await refreshProposalMessage(messageObject.client, proposal, false, true);
   }
 
+  // REPLACE ACTION
   if (command.command == Command.ReplaceAction) {
     const proposal = await getProposal(command.id);
     if (proposal.status != ProposalStatus.Building) {
@@ -450,10 +472,10 @@ export async function executeCommand(
     // Replace action in DB
     await replaceAction(proposal.id, command.index, command.actionString);
     // Update proposal view
-    const newEmbed = generateProposalEmbed(proposal, null, actions);
-    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+    await refreshProposalMessage(messageObject.client, proposal, false, true);
   }
 
+  // REMOVE ACTION
   if (command.command == Command.RemoveAction) {
     const proposal = await getProposal(command.id);
     if (proposal.status != ProposalStatus.Building) {
@@ -474,7 +496,21 @@ export async function executeCommand(
     // Remove action from db
     await removeAction(proposal.id, command.index);
     // Update proposal view
-    const newEmbed = generateProposalEmbed(proposal, null, actions);
-    await refreshProposalMessage(messageObject.client, proposal, newEmbed);
+    await refreshProposalMessage(messageObject.client, proposal, false, true);
+  }
+
+  // RESEND PROPOSAL
+  if (command.command == Command.ResendProposal) {
+  }
+
+  // RETRY PROPOSAL
+  if (command.command == Command.RetryProposal) {
+    const proposal = await getProposal(command.id);
+    //if (proposal.status != ProposalStatus.ExecutionError) {
+    //  throw new Error(
+    //    'Proposal must have failed to implement to start a retry'
+    //  );
+    //}
+    await handleProposalExpire(messageObject.client, proposal.id);
   }
 }

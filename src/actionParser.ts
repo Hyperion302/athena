@@ -2,6 +2,7 @@ import { Permissions, Channel } from 'discord.js';
 import { ActionLexer } from './actionLexer';
 import { IToken } from 'chevrotain';
 import { parseDuration } from './commands';
+import { Server } from 'http';
 
 // Since the shorthand actions are, well, shorthands
 // there are no action data types for them since I can
@@ -30,14 +31,14 @@ export const enum Action {
   ChangeChannelSetting = 'change channel setting',
 }
 
-enum RoleSetting {
+export enum RoleSetting {
   Color = 'color',
   Hoist = 'hoist',
   Mentionable = 'mentionable',
   Name = 'name',
 }
 
-enum ServerSetting {
+export enum ServerSetting {
   AFKChannel = 'afk channel',
   AFKTimeout = 'afk timeout',
   Name = 'name',
@@ -45,17 +46,17 @@ enum ServerSetting {
   // TODO: More
 }
 
-enum ChannelSetting {
+export enum ChannelSetting {
   Name = 'name',
   Topic = 'topic',
 }
 
-enum MoveRelativePosition {
+export enum MoveRelativePosition {
   Above = 'above',
   Below = 'below',
 }
 
-enum ChannelType {
+export enum ChannelType {
   Text = 'text',
   Voice = 'voice',
 }
@@ -118,11 +119,38 @@ interface RemovePermissionOverrideAction {
   subject: ResourceReference; // Role or user
 }
 
-interface ChangeRoleSettingAction {
+type ChangeRoleSettingAction =
+  | ChangeRoleNameAction
+  | ChangeRoleColorAction
+  | ChangeRoleMentionableAction
+  | ChangeRoleHoistAction;
+
+interface ChangeRoleNameAction {
   action: Action.ChangeRoleSetting;
   role: ResourceReference;
-  setting: RoleSetting;
-  value: boolean | number | string | ResourceReference;
+  setting: RoleSetting.Name;
+  value: string;
+}
+
+interface ChangeRoleColorAction {
+  action: Action.ChangeRoleSetting;
+  role: ResourceReference;
+  setting: RoleSetting.Color;
+  value: number;
+}
+
+interface ChangeRoleMentionableAction {
+  action: Action.ChangeRoleSetting;
+  role: ResourceReference;
+  setting: RoleSetting.Mentionable;
+  value: boolean;
+}
+
+interface ChangeRoleHoistAction {
+  action: Action.ChangeRoleSetting;
+  role: ResourceReference;
+  setting: RoleSetting.Hoist;
+  value: boolean;
 }
 
 interface MoveRoleAction {
@@ -150,17 +178,41 @@ interface DestroyChannelAction {
   channel: ResourceReference;
 }
 
-interface ChangeServerSettingAction {
+type ChangeServerSettingAction =
+  | ChangeServerAFKChannelAction
+  | ChangeServerAFKTimeoutAction
+  | ChangeServerNameAction
+  | ChangeServerContentFilterAction;
+
+interface ChangeServerAFKChannelAction {
   action: Action.ChangeServerSetting;
-  setting: ServerSetting;
-  value: boolean | number | string | ResourceReference;
+  setting: ServerSetting.AFKChannel;
+  value: ResourceReference;
+}
+
+interface ChangeServerAFKTimeoutAction {
+  action: Action.ChangeServerSetting;
+  setting: ServerSetting.AFKTimeout;
+  value: number;
+}
+
+interface ChangeServerNameAction {
+  action: Action.ChangeServerSetting;
+  setting: ServerSetting.Name;
+  value: string;
+}
+
+interface ChangeServerContentFilterAction {
+  action: Action.ChangeServerSetting;
+  setting: ServerSetting.ContentFilter;
+  value: boolean;
 }
 
 interface ChangeChannelSettingAction {
   action: Action.ChangeChannelSetting;
   channel: ResourceReference;
   setting: ChannelSetting;
-  value: boolean | number | string | ResourceReference;
+  value: string;
 }
 
 // Convenience union type
@@ -298,7 +350,13 @@ function parseRoleSettingToken(token: IToken): RoleSetting {
   throw new Error(`Unrecognized role setting ${name}`);
 }
 
-function parseServerSettingToken(token: IToken): ServerSetting {
+function parseServerSettingToken(
+  token: IToken
+):
+  | ServerSetting.AFKChannel
+  | ServerSetting.AFKTimeout
+  | ServerSetting.Name
+  | ServerSetting.ContentFilter {
   const name = token.tokenType.name;
   if (name == 'AFKChannel') {
     return ServerSetting.AFKChannel;
@@ -368,7 +426,7 @@ function parseChannelToken(token: IToken): ResourceReference {
   } else if (token.tokenType.name == 'OutputReference') {
     return {
       type: ReferenceType.Output,
-      index: parseInt(token.image.slice(1, -1), 10),
+      index: parseInt(token.image.slice(1), 10) - 1,
     };
   } else if (token.tokenType.name == 'ExactName') {
     return {
@@ -394,7 +452,7 @@ function parseRoleToken(token: IToken): ResourceReference {
   } else if (token.tokenType.name == 'OutputReference') {
     return {
       type: ReferenceType.Output,
-      index: parseInt(token.image.slice(1), 10),
+      index: parseInt(token.image.slice(1), 10) - 1,
     };
   } else if (token.tokenType.name == 'ExactName') {
     return {
@@ -425,7 +483,7 @@ function parseSubjectToken(token: IToken): ResourceReference {
   } else if (token.tokenType.name == 'OutputReference') {
     return {
       type: ReferenceType.Output,
-      index: parseInt(token.image.slice(1), 10),
+      index: parseInt(token.image.slice(1), 10) - 1,
     };
   } else if (token.tokenType.name == 'ExactName') {
     return {
@@ -451,6 +509,7 @@ export function parseAction(actionString: string): tAction {
   // Lex the action string
   const lexed = ActionLexer.tokenize(actionString);
   if (lexed.errors.length) {
+    console.warn(lexed.errors);
     throw new Error('Syntax error in action string');
   }
   const tokens = lexed.tokens;
@@ -669,27 +728,32 @@ export function parseAction(actionString: string): tAction {
   if (actionName == Action.ChangeRoleSetting) {
     const roleRef = parseRoleToken(tokens[1]);
     const setting = parseRoleSettingToken(tokens[2]);
-    let value: boolean | string;
     switch (setting) {
       case RoleSetting.Color:
-        value = tokens.slice(3)[0].image;
-        break;
+        return {
+          action: Action.ChangeRoleSetting,
+          role: roleRef,
+          setting,
+          value: parseInt(tokens.slice(3)[0].image, 10),
+        };
       case RoleSetting.Hoist:
       case RoleSetting.Mentionable:
-        value = tokens.slice(3)[0].image == 'true';
-        break;
+        return {
+          action: Action.ChangeRoleSetting,
+          role: roleRef,
+          setting,
+          value: tokens.slice(3)[0].image == 'true',
+        };
       case RoleSetting.Name:
-        value = tokens.slice(3).join(' ');
-        break;
+        return {
+          action: Action.ChangeRoleSetting,
+          role: roleRef,
+          setting,
+          value: tokens.slice(3).join(' '),
+        };
       default:
         throw new Error(`Unrecognized role setting ${setting}`);
     }
-    return {
-      action: Action.ChangeRoleSetting,
-      role: roleRef,
-      setting,
-      value,
-    };
   }
 
   if (actionName == Action.MoveRole) {
@@ -763,24 +827,38 @@ export function parseAction(actionString: string): tAction {
     const setting = parseServerSettingToken(tokens[1]);
     let value: ResourceReference | number | string | boolean;
     if (setting == ServerSetting.AFKChannel) {
-      value = parseChannelToken(tokens[2]);
+      console.log(tokens[2]);
+      console.log(parseChannelToken(tokens[2]));
+      return {
+        action: Action.ChangeServerSetting,
+        setting: ServerSetting.AFKChannel,
+        value: parseChannelToken(tokens[2]),
+      };
     } else if (setting == ServerSetting.AFKTimeout) {
-      value = parseDuration(tokens[2].image);
+      return {
+        action: Action.ChangeServerSetting,
+        setting: ServerSetting.AFKTimeout,
+        value: parseDuration(tokens[2].image),
+      };
     } else if (setting == ServerSetting.Name) {
       value = tokens
         .slice(2)
         .map((token) => token.image)
         .join(' ');
+      return {
+        action: Action.ChangeServerSetting,
+        setting: ServerSetting.Name,
+        value,
+      };
     } else if (setting == ServerSetting.ContentFilter) {
-      value = tokens[2].image == 'true';
+      return {
+        action: Action.ChangeServerSetting,
+        setting: ServerSetting.ContentFilter,
+        value: tokens[2].image == 'true',
+      };
     } else {
       throw new Error('Unrecognized server setting');
     }
-    return {
-      action: Action.ChangeServerSetting,
-      setting,
-      value,
-    };
   }
 
   if (actionName == Action.ChangeChannelSetting) {

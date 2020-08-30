@@ -203,18 +203,34 @@ add action 7df4d move channel \*3 below "General 2"
 
 `RUNNING` Opened to vote
 
-`CLOSED` Implemented or didn't pass, votes tallied
+`PASSED` Passed the vote, successfully implemented
+
+`FAILED` Did not pass the vote
+
+`EXECUTION_ERROR` Passed the vote, could not be implemented
 
 `CANCELLED` Cancelled before expiration
 
 # Future features
 
-Role position detection: alerts a server if there are members 'untouchable' by the bot
+Status evaluation: status command will check the bots perms and list any it's missing (and the actions it can't do without those permissions). It will also list any problems in the role hiearchy (immunity)
 
 Quorums: Custom quorums and vote ratio requirements beyond a simple majority no-quorum requirement
 
 Vote permission: A custom permission to allow or prohibit members from voting
 
+Fleshed out channel and server setting: Full support of all settings, multiple explicit content levels
+
+Atomic Proposals: After an error, the proposal should undo its work
+
+Category support (URGENT): Support for categories. The bot isn't nearly as useful as it should be without this feature
+
 # Future fixes
 
 Error handling & Fault Tolerance: Action validation should gracefully fail and properly inform the user where exactly the error occured. Failures during execution should also gracefully fail and the user should be allowed to retry execution.
+
+Better fetching: I should make use of member fetch queries to speed up member searching when resolving usernames
+
+# Immediate fixes
+
+Move action doesn't move???? (both channel and role)
