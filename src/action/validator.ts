@@ -2,103 +2,146 @@ import {
   ReferenceType,
   ResourceReference,
   Action,
-  MAX_ROLE_NAME,
-  MAX_CHANNEL_NAME,
-  MIN_CHANNEL_NAME,
   tAction,
+  ServerSetting,
+  MAX_CHANNEL_LENGTH,
+  MIN_CHANNEL_LENGTH,
 } from '.';
 import { Guild } from 'discord.js';
+
+export interface ReferenceValidationResult {
+  valid: boolean;
+  error?: ReferenceValidationError;
+}
+
+export enum ReferenceValidationError {
+  NullReference,
+  InvalidReferenceType,
+}
+
+export interface ActionValidationResult {
+  valid: boolean;
+  referenceValidations: ReferenceValidationResult[]; // Unordered
+  error?: ActionValidationError;
+}
+
+export enum ActionValidationError {
+  InvalidActionType,
+}
+
+export interface ProposalValidationResult {
+  valid: boolean;
+  actionValidations: ActionValidationResult[]; // Ordered
+  invalidActions: number[];
+}
 
 async function validateUserReference(
   server: Guild,
   ref: ResourceReference
-): Promise<boolean> {
+): Promise<ReferenceValidationResult> {
   if (ref.type == ReferenceType.Username) {
     const user = server.members.cache.find(
       (member) =>
         member.user.username == ref.username &&
         member.user.discriminator == ref.discriminator.toString()
     );
-    return !!user;
+    if (user) return { valid: true };
+    return { valid: false, error: ReferenceValidationError.NullReference };
   }
   if (ref.type == ReferenceType.ID) {
     const user = await server.members.fetch(ref.id);
-    return !!user;
+    if (user) return { valid: true };
+    return { valid: false, error: ReferenceValidationError.NullReference };
   }
-  return false;
+  return { valid: false, error: ReferenceValidationError.InvalidReferenceType };
 }
 
 async function validateRoleReference(
   server: Guild,
   ref: ResourceReference
-): Promise<boolean> {
+): Promise<ReferenceValidationResult> {
   if (ref.type == ReferenceType.FullName) {
     const role = server.roles.cache.find((role) => role.name == ref.name);
-    return !!role;
+    if (role) return { valid: true };
+    return { valid: false, error: ReferenceValidationError.NullReference };
   }
   if (ref.type == ReferenceType.ID) {
     const role = await server.roles.fetch(ref.id);
-    return !!role;
+    if (role) return { valid: true };
+    return { valid: false, error: ReferenceValidationError.NullReference };
   }
   if (ref.type == ReferenceType.Pointer) {
-    return true; // Validation of output reference occurs elsewhere
+    return { valid: true };
   }
-  return false;
+  return { valid: false, error: ReferenceValidationError.InvalidReferenceType };
 }
 
 function validateChannelReference(
   server: Guild,
   ref: ResourceReference
-): boolean {
+): ReferenceValidationResult {
   if (ref.type == ReferenceType.FullName) {
     const channel = server.channels.cache.find(
       (channel) => channel.name == ref.name
     );
-    return !!channel;
+    if (channel) return { valid: true };
+    return { valid: false, error: ReferenceValidationError.NullReference };
   }
   if (ref.type == ReferenceType.ID) {
     const channel = server.channels.resolve(ref.id);
-    return !!channel;
+    if (channel) return { valid: true };
+    return { valid: false, error: ReferenceValidationError.NullReference };
   }
   if (ref.type == ReferenceType.Pointer) {
-    return true; // Validation of output reference occurs elsewhere
+    return { valid: true };
   }
-  return false;
+  return { valid: false, error: ReferenceValidationError.InvalidReferenceType };
 }
 
 async function validateUserOrRoleReference(
   server: Guild,
   ref: ResourceReference
-): Promise<boolean> {
+): Promise<ReferenceValidationResult> {
   if (ref.type == ReferenceType.Username) {
     const user = server.members.cache.find(
       (member) =>
         member.user.username == ref.username &&
         member.user.discriminator == ref.discriminator.toString()
     );
-    return !!user;
+    if (user) return { valid: true };
+    return { valid: false, error: ReferenceValidationError.NullReference };
   }
   if (ref.type == ReferenceType.ID) {
     try {
       const user = await server.members.fetch(ref.id);
-      return !!user;
+      if (user) return { valid: true };
+      if (!user) {
+        return { valid: false, error: ReferenceValidationError.NullReference };
+      }
     } catch (e) {
       try {
         const role = await server.roles.fetch(ref.id);
-        return !!role;
+        if (role) return { valid: true };
+        if (!role) {
+          return {
+            valid: false,
+            error: ReferenceValidationError.NullReference,
+          };
+        }
       } catch (e) {
-        return false;
+        return { valid: false, error: ReferenceValidationError.NullReference };
       }
     }
   }
   if (ref.type == ReferenceType.FullName) {
     const role = server.roles.cache.find((role) => role.name == ref.name);
-    return !!role;
+    if (role) return { valid: true };
+    return { valid: false, error: ReferenceValidationError.NullReference };
   }
   if (ref.type == ReferenceType.Pointer) {
-    return true; // Validation of output reference occurs elsewhere
+    return { valid: true };
   }
-  return false;
+  return { valid: false, error: ReferenceValidationError.InvalidReferenceType };
 }
 
 // Validates a single action
@@ -107,109 +150,126 @@ async function validateUserOrRoleReference(
 export async function validateAction(
   server: Guild,
   action: tAction
-): Promise<string | true> {
-  if (action.action == Action.Kick) {
-    const userRefValid = await validateUserReference(server, action.user);
-    if (!userRefValid) return 'Invalid user reference';
-    return true;
-  }
-  if (action.action == Action.Ban) {
-    const userRefValid = await validateUserReference(server, action.user);
-    if (!userRefValid) return 'Invalid user reference';
-    return true;
+): Promise<ActionValidationResult> {
+  if (action.action == Action.Kick || action.action == Action.Ban) {
+    const userValidation = await validateUserReference(server, action.user);
+    return {
+      valid: userValidation.valid,
+      referenceValidations: [userValidation],
+    };
   }
   if (action.action == Action.CreateRole) {
-    if (action.name.length > MAX_ROLE_NAME) {
-      return 'Role name too long';
-    }
-    return true;
+    return { valid: true, referenceValidations: [] };
   }
   if (action.action == Action.DestroyRole) {
-    const roleRefValid = await validateRoleReference(server, action.role);
-    if (!roleRefValid) return 'Invalid role reference';
-    return true;
+    const roleValidation = await validateRoleReference(server, action.role);
+    return {
+      valid: roleValidation.valid,
+      referenceValidations: [roleValidation],
+    };
   }
   if (action.action == Action.ChangeRoleAssignment) {
-    const roleRefValid = await validateRoleReference(server, action.role);
-    if (!roleRefValid) return 'Invalid role reference';
-    const grantsValid = (
-      await Promise.all(
-        action.grant.map((userRef) => validateRoleReference(server, userRef))
-      )
-    ).every((valid) => valid);
-    if (!grantsValid) return 'Invalid grant list';
-    const revokesValid = (
-      await Promise.all(
-        action.revoke.map((userRef) => validateUserReference(server, userRef))
-      )
-    ).every((valid) => valid);
-    if (!revokesValid) return 'Invalid revoke list';
-    return true;
+    const roleValidation = await validateRoleReference(server, action.role);
+    const grantValidation = await Promise.all(
+      action.grant.map((grant) => validateUserReference(server, grant))
+    );
+    const revokeValidation = await Promise.all(
+      action.revoke.map((grant) => validateUserReference(server, grant))
+    );
+    const validations = [
+      roleValidation,
+      ...grantValidation,
+      ...revokeValidation,
+    ];
+    return {
+      valid: validations.every((validation) => validation.valid),
+      referenceValidations: validations,
+    };
   }
   // The permissions have already been validated in previous steps
   if (action.action == Action.ChangeRolePermissions) {
-    const roleRefValid = await validateRoleReference(server, action.role);
-    if (!roleRefValid) return 'Invalid role reference';
-    return true;
+    const roleValidation = await validateRoleReference(server, action.role);
+    return {
+      valid: roleValidation.valid,
+      referenceValidations: [roleValidation],
+    };
   }
   if (
     action.action == Action.AddPermissionOverrideOn ||
     action.action == Action.ChangePermissionOverrideOn ||
     action.action == Action.RemovePermissionOverrideOn
   ) {
-    const channelRefValid = validateChannelReference(server, action.channel);
-    if (!channelRefValid) return 'Invalid channel reference';
-    const subjectRefValid = await validateUserOrRoleReference(
+    const channelValidation = validateChannelReference(server, action.channel);
+    const subjectValidation = await validateUserOrRoleReference(
       server,
       action.subject
     );
-    if (!subjectRefValid) return 'Invalid subject reference';
-    return true;
+    return {
+      valid: channelValidation.valid && subjectValidation.valid,
+      referenceValidations: [channelValidation, subjectValidation],
+    };
   }
   if (action.action == Action.ChangeRoleSetting) {
-    const roleRefValid = await validateRoleReference(server, action.role);
-    if (!roleRefValid) return 'Invalid role reference';
-    // TODO: Validate role setting bounds
-    return true;
+    const roleValidation = await validateRoleReference(server, action.role);
+    return {
+      valid: roleValidation.valid,
+      referenceValidations: [roleValidation],
+    };
   }
   if (action.action == Action.MoveRole) {
-    const roleRefValid = await validateRoleReference(server, action.role);
-    if (!roleRefValid) return 'Invalid role reference';
-    const subjectRefValid = await validateRoleReference(server, action.subject);
-    if (!subjectRefValid) return 'Invalid subject reference';
-    return true;
+    const roleValidation = await validateRoleReference(server, action.role);
+    const subjectValidation = await validateRoleReference(
+      server,
+      action.subject
+    );
+    return {
+      valid: roleValidation.valid && subjectValidation.valid,
+      referenceValidations: [roleValidation, subjectValidation],
+    };
   }
   if (action.action == Action.MoveChannel) {
-    const channelRefValid = validateChannelReference(server, action.channel);
-    if (!channelRefValid) return 'Invalid channel reference';
-    const subjectRefValid = validateChannelReference(server, action.channel);
-    if (!subjectRefValid) return 'Invalid subject reference';
-    return true;
+    const channelValidation = validateChannelReference(server, action.channel);
+    const subjectValidation = validateChannelReference(server, action.channel);
+    return {
+      valid: channelValidation.valid && subjectValidation.valid,
+      referenceValidations: [channelValidation, subjectValidation],
+    };
   }
   if (action.action == Action.CreateChannel) {
-    if (
-      action.name.length > MAX_CHANNEL_NAME ||
-      action.name.length < MIN_CHANNEL_NAME
-    ) {
-      return 'Channel name too long or too short';
-    }
-    return true;
+    return {
+      valid: true,
+      referenceValidations: [],
+    };
   }
   if (action.action == Action.DestroyChannel) {
-    const channelRefValid = validateChannelReference(server, action.channel);
-    if (!channelRefValid) return 'Invalid channel reference';
-    return true;
+    const channelValidation = validateChannelReference(server, action.channel);
+    return {
+      valid: channelValidation.valid,
+      referenceValidations: [channelValidation],
+    };
   }
   if (action.action == Action.ChangeServerSetting) {
-    return true;
-    // TODO: Validate setting values
+    if (action.setting == ServerSetting.AFKChannel) {
+      const channelValidation = validateChannelReference(server, action.value);
+      return {
+        valid: channelValidation.valid,
+        referenceValidations: [channelValidation],
+      };
+    }
+    return { valid: true, referenceValidations: [] };
   }
   if (action.action == Action.ChangeChannelSetting) {
-    const channelRefValid = validateChannelReference(server, action.channel);
-    if (!channelRefValid) return 'Invalid channel reference';
-    return true;
+    const channelValidation = validateChannelReference(server, action.channel);
+    return {
+      valid: channelValidation.valid,
+      referenceValidations: [channelValidation],
+    };
   }
-  return 'Unknown action';
+  return {
+    valid: false,
+    referenceValidations: [],
+    error: ActionValidationError.InvalidActionType,
+  };
 }
 
 // Runs individual validation on all actions and additionally validates
@@ -217,14 +277,20 @@ export async function validateAction(
 export async function validateActions(
   server: Guild,
   actions: tAction[]
-): Promise<(string | true)[] | number[] | true> {
-  const individualValidations = await Promise.all(
+): Promise<ProposalValidationResult> {
+  const actionValidations = await Promise.all(
     actions.map((action) => validateAction(server, action))
   );
-  const individualValidationSuccess = individualValidations.every(
-    (validation) => validation == true
+  const actionValidationSuccess = actionValidations.every(
+    (validation) => validation.valid
   );
-  if (!individualValidationSuccess) return individualValidations;
+  if (!actionValidationSuccess) {
+    return {
+      valid: false,
+      actionValidations,
+      invalidActions: [],
+    };
+  }
   const invalidActionIndices: number[] = [];
   // Validate object references
   actions.forEach((action: tAction, index: number) => {
@@ -293,6 +359,9 @@ export async function validateActions(
         break;
     }
   });
-  if (invalidActionIndices.length) return invalidActionIndices;
-  return true;
+  return {
+    valid: invalidActionIndices.length ? false : true,
+    actionValidations,
+    invalidActions: invalidActionIndices,
+  };
 }

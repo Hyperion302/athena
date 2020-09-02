@@ -61,9 +61,7 @@ client.on('message', async (message) => {
     try {
       parsedCommand = parseCommand(command, message.channel.id);
     } catch (e) {
-      await message.channel.send(
-        `There was an error reading that command: ${e.message}`
-      );
+      await message.channel.send(`There was an error: ${e.message}`);
       console.warn(e);
       return;
     }
@@ -74,9 +72,7 @@ client.on('message', async (message) => {
     try {
       await executeCommand(parsedCommand, message);
     } catch (e) {
-      await message.channel.send(
-        `There was an error executing that command: ${e.message}`
-      );
+      await message.channel.send(`There was an error: ${e.message}`);
       console.warn(e);
       return;
     }

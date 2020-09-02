@@ -1,5 +1,11 @@
-import { Command, tCommand } from '.';
+import {
+  Command,
+  tCommand,
+  MIN_PROPOSAL_DESCRIPTION_LENGTH,
+  MAX_PROPOSAL_DESCRIPTION_LENGTH,
+} from '.';
 import { parseDuration, parseAction } from '../action';
+import { CommandSyntaxError } from '../errors/CommandSyntaxError';
 
 export function parseCommand(command: string, channel: string): tCommand {
   if (command.startsWith(Command.CreateProposal)) {
@@ -7,7 +13,11 @@ export function parseCommand(command: string, channel: string): tCommand {
       .slice(Command.CreateProposal.length)
       .trim()
       .split(' ');
-    const duration = parseDuration(params.shift());
+    const durationString = params.shift();
+    const duration = parseDuration(durationString);
+    if (!duration) {
+      throw new CommandSyntaxError(`Invalid duration ${durationString}`);
+    }
     const name = params.join(' ');
     return {
       command: Command.CreateProposal,
@@ -45,10 +55,21 @@ export function parseCommand(command: string, channel: string): tCommand {
     let field: 'description' | 'duration';
     if (params[1] == 'description') {
       value = params.slice(2).join(' ');
+      if (
+        value.length < MIN_PROPOSAL_DESCRIPTION_LENGTH ||
+        value.length > MAX_PROPOSAL_DESCRIPTION_LENGTH
+      ) {
+        throw new CommandSyntaxError(
+          `Proposal description too long or too short (${MIN_PROPOSAL_DESCRIPTION_LENGTH}-${MAX_PROPOSAL_DESCRIPTION_LENGTH})`
+        );
+      }
       field = 'description';
     }
     if (params[1] == 'duration') {
       value = parseDuration(params[2]);
+      if (!value) {
+        throw new CommandSyntaxError(`Invalid duration ${params[2]}`);
+      }
       field = 'duration';
     }
     return {
@@ -71,6 +92,7 @@ export function parseCommand(command: string, channel: string): tCommand {
   if (command.startsWith(Command.AddAction)) {
     const params = command.slice(Command.AddAction.length).trim().split(' ');
     const actionString = params.slice(1).join(' ');
+    // Action parser takes care of length
     const action = parseAction(actionString);
     return {
       command: Command.AddAction,
@@ -85,9 +107,13 @@ export function parseCommand(command: string, channel: string): tCommand {
       .trim()
       .split(' ');
     let index = parseInt(params[1], 10);
-    if (isNaN(index)) throw new Error('Invalid index');
+    if (isNaN(index)) {
+      throw new CommandSyntaxError(`Invalid index ${params[1]}`);
+    }
     index--; // 1-indexed => 0-indexed
-    if (index < 0) throw new Error('Invalid index');
+    if (index < 0) {
+      throw new CommandSyntaxError(`Invalid index ${params[1]}`);
+    }
     const actionString = params.slice(2).join(' ');
     const action = parseAction(actionString);
     return {
@@ -127,9 +153,13 @@ export function parseCommand(command: string, channel: string): tCommand {
   if (command.startsWith(Command.InsertAction)) {
     const params = command.slice(Command.RemoveAction.length).trim().split(' ');
     let index = parseInt(params[1], 10);
-    if (isNaN(index)) throw new Error('Invalid index');
+    if (isNaN(index)) {
+      throw new CommandSyntaxError(`Invalid index ${params[1]}`);
+    }
     index--; // 1-indexed => 0-indexed
-    if (index < 0) throw new Error('Invalid index');
+    if (index < 0) {
+      throw new CommandSyntaxError(`Invalid index ${params[1]}`);
+    }
     const actionString = params.slice(2).join(' ');
     const action = parseAction(actionString);
     return {

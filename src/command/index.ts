@@ -1,5 +1,12 @@
 import { tAction } from '../action';
 
+export const MAX_PROPOSAL_NAME_LENGTH = 256;
+export const MIN_PROPOSAL_NAME_LENGTH = 2;
+export const MAX_PROPOSAL_DESCRIPTION_LENGTH = 1024;
+export const MIN_PROPOSAL_DESCRIPTION_LENGTH = 0;
+export const MIN_DURATION = 5;
+export const MAX_DURATION = 172800;
+
 export enum Command {
   CreateProposal = 'create proposal',
   CancelProposal = 'cancel proposal',

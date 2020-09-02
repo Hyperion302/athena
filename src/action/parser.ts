@@ -9,9 +9,21 @@ import {
   ActionLexer,
   MoveRelativePosition,
   ChannelType,
+  MAX_SERVER_LENGTH,
+  MIN_CHANNEL_LENGTH,
+  MAX_CHANNEL_LENGTH,
+  MIN_SERVER_LENGTH,
+  MIN_TOPIC_LENGTH,
+  MAX_TOPIC_LENGTH,
+  MIN_COLOR,
+  MAX_COLOR,
+  MIN_ROLE_LENGTH,
+  MAX_ROLE_LENGTH,
+  MAX_ACTION_LENGTH,
 } from '.';
 import { IToken } from 'chevrotain';
 import { Permissions } from 'discord.js';
+import { ActionSyntaxError } from '../errors';
 
 export function parseDuration(duration: string): number {
   const unit = duration.slice(-1);
@@ -31,7 +43,7 @@ export function parseDuration(duration: string): number {
       multiplier = 60 * 60 * 24;
       break;
     default:
-      throw new Error(`Invalid unit of time "${unit}"`);
+      return null;
   }
   return magnitude * multiplier;
 }
@@ -97,7 +109,7 @@ function parsePermissionToken(token: IToken): number {
     case 'ManageEmojis':
       return Permissions.FLAGS.MANAGE_EMOJIS;
     default:
-      throw new Error(`Unknown permission ${token.image}`);
+      throw new ActionSyntaxError(`Unrecognized permission ${token.image}`);
   }
 }
 function parseRoleSettingToken(token: IToken): RoleSetting {
@@ -114,7 +126,7 @@ function parseRoleSettingToken(token: IToken): RoleSetting {
   if (name == 'Name') {
     return RoleSetting.Name;
   }
-  throw new Error(`Unrecognized role setting ${name}`);
+  throw new ActionSyntaxError(`Unrecognized role setting ${token.image}`);
 }
 
 function parseServerSettingToken(
@@ -137,7 +149,7 @@ function parseServerSettingToken(
   if (name == 'ContentFilter') {
     return ServerSetting.ContentFilter;
   }
-  throw new Error(`Unrecognized server setting ${name}`);
+  throw new ActionSyntaxError(`Unrecognized server setting ${token.image}`);
 }
 
 function parseChannelSetting(token: IToken): ChannelSetting {
@@ -148,7 +160,7 @@ function parseChannelSetting(token: IToken): ChannelSetting {
   if (name == 'Topic') {
     return ChannelSetting.Topic;
   }
-  throw new Error('Unrecognized channel setting');
+  throw new ActionSyntaxError(`Unrecognized channel setting ${token.image}`);
 }
 
 function parseUserToken(token: IToken): ResourceReference {
@@ -167,7 +179,7 @@ function parseUserToken(token: IToken): ResourceReference {
     const username = match[1];
     const discrim = parseInt(match[2], 10);
     if (!(username && discrim)) {
-      throw new Error('Invalid username');
+      throw new ActionSyntaxError(`Invalid username ${token.image}`);
     }
     return {
       type: ReferenceType.Username,
@@ -175,7 +187,7 @@ function parseUserToken(token: IToken): ResourceReference {
       discriminator: discrim,
     };
   } else {
-    throw new Error('Invalid user reference');
+    throw new ActionSyntaxError(`Invalid user reference ${token.image}`);
   }
 }
 
@@ -201,7 +213,7 @@ function parseChannelToken(token: IToken): ResourceReference {
       name: token.image.slice(1, -1),
     };
   } else {
-    throw new Error('Invalid channel reference');
+    throw new ActionSyntaxError(`Invalid channel reference ${token.image}`);
   }
 }
 
@@ -227,7 +239,7 @@ function parseRoleToken(token: IToken): ResourceReference {
       name: token.image.slice(1, -1),
     };
   } else {
-    throw new Error('Invalid role reference');
+    throw new ActionSyntaxError(`Invalid role reference ${token.image}`);
   }
 }
 
@@ -274,10 +286,14 @@ function parseSubjectToken(token: IToken): ResourceReference {
 
 export function parseAction(actionString: string): tAction {
   // Lex the action string
+  if (actionString.length > MAX_ACTION_LENGTH) {
+    throw new ActionSyntaxError(
+      `Action cannot be longer than ${MAX_ACTION_LENGTH} characters`
+    );
+  }
   const lexed = ActionLexer.tokenize(actionString);
   if (lexed.errors.length) {
-    console.warn(lexed.errors);
-    throw new Error('Syntax error in action string');
+    throw new ActionSyntaxError('Syntax error in action string');
   }
   const tokens = lexed.tokens;
   const actionToken = tokens[0];
@@ -324,11 +340,11 @@ export function parseAction(actionString: string): tAction {
     const grants: ResourceReference[] = [],
       revocations: ResourceReference[] = [];
     if (!assignmentTokens || !assignmentTokens.length) {
-      throw new Error('Invalid user list');
+      throw new ActionSyntaxError('Must provide assignments');
     }
     if (assignmentTokens.length % 2 != 0) {
       // Odd # means something's wrong
-      throw new Error('invalid user list');
+      throw new ActionSyntaxError('Malformed assignment list');
     }
     for (let i = 0; i < assignmentTokens.length; i += 2) {
       const userRef = parseUserToken(assignmentTokens[i + 1]);
@@ -351,7 +367,7 @@ export function parseAction(actionString: string): tAction {
     const roleRef = parseRoleToken(tokens[1]);
     const grantTokens = tokens.slice(2);
     if (!grantTokens || !grantTokens.length) {
-      throw new Error('Invalid user list');
+      throw new ActionSyntaxError('Must provide roles');
     }
     const grants = grantTokens.map(parseUserToken);
     return {
@@ -365,7 +381,7 @@ export function parseAction(actionString: string): tAction {
     const roleRef = parseRoleToken(tokens[1]);
     const revokeTokens = tokens.slice(2);
     if (!revokeTokens || !revokeTokens.length) {
-      throw new Error('Invalid user list');
+      throw new ActionSyntaxError('Must provide roles');
     }
     const revocations = revokeTokens.map(parseUserToken);
     return {
@@ -382,10 +398,10 @@ export function parseAction(actionString: string): tAction {
     const allow: number[] = [],
       deny: number[] = [];
     if (!permissionTokens || !permissionTokens.length) {
-      throw new Error('Invalid permission list');
+      throw new ActionSyntaxError('Must provide permissions');
     }
     if (permissionTokens.length % 2 != 0) {
-      throw new Error('Invalid permission list');
+      throw new ActionSyntaxError('Malformed permission list');
     }
     for (let i = 0; i < permissionTokens.length; i += 2) {
       const permission = parsePermissionToken(permissionTokens[i + 1]);
@@ -409,7 +425,7 @@ export function parseAction(actionString: string): tAction {
     const roleRef = parseRoleToken(tokens[1]);
     const permissionTokens = tokens.slice(2);
     if (!permissionTokens || !permissionTokens.length) {
-      throw new Error('Invalid permission list');
+      throw new ActionSyntaxError('Must provide permissions');
     }
     const permissions = permissionTokens.map(parsePermissionToken);
     return {
@@ -424,7 +440,7 @@ export function parseAction(actionString: string): tAction {
     const roleRef = parseRoleToken(tokens[1]);
     const permissionTokens = tokens.slice(2);
     if (!permissionTokens || !permissionTokens.length) {
-      throw new Error('Invalid permission list');
+      throw new ActionSyntaxError('Must provide permissions');
     }
     const permissions = permissionTokens.map(parsePermissionToken);
     return {
@@ -442,7 +458,7 @@ export function parseAction(actionString: string): tAction {
   ) {
     const channelRef = parseChannelToken(tokens[1]);
     if (tokens[2].tokenType.name != 'For') {
-      throw new Error(`Invalid syntax at "${tokens[2].image}"`);
+      throw new ActionSyntaxError(`Unexpected token ${tokens[2].image}`);
     }
     const subjectRef = parseSubjectToken(tokens[3]);
     const permissionTokens = tokens.slice(4);
@@ -450,10 +466,10 @@ export function parseAction(actionString: string): tAction {
     const unset: number[] = [];
     const deny: number[] = [];
     if (!permissionTokens || !permissionTokens.length) {
-      throw new Error('Invalid permission list');
+      throw new ActionSyntaxError('Must provide permissions');
     }
     if (permissionTokens.length % 2 != 0) {
-      throw new Error('Invalid permission list');
+      throw new ActionSyntaxError('Malformed permission list');
     }
     for (let i = 0; i < permissionTokens.length; i += 2) {
       const permission = parsePermissionToken(permissionTokens[i + 1]);
@@ -481,7 +497,7 @@ export function parseAction(actionString: string): tAction {
   if (actionName == Action.RemovePermissionOverrideOn) {
     const channelRef = parseChannelToken(tokens[1]);
     if (tokens[2].tokenType.name != 'For') {
-      throw new Error(`Invalid syntax at "${tokens[2].image}"`);
+      throw new ActionSyntaxError(`Unexpected token ${tokens[2].image}`);
     }
     const subjectRef = parseSubjectToken(tokens[3]);
     return {
@@ -496,11 +512,19 @@ export function parseAction(actionString: string): tAction {
     const setting = parseRoleSettingToken(tokens[2]);
     switch (setting) {
       case RoleSetting.Color:
+        const colorString = tokens.slice(3)[0].image;
+        const colorNum = parseInt(colorString, 10);
+        if (!colorNum) {
+          throw new ActionSyntaxError(`Invalid color ${colorString}`);
+        }
+        if (colorNum < MIN_COLOR || colorNum > MAX_COLOR) {
+          throw new ActionSyntaxError('Color out of bounds');
+        }
         return {
           action: Action.ChangeRoleSetting,
           role: roleRef,
           setting,
-          value: parseInt(tokens.slice(3)[0].image, 10),
+          value: colorNum,
         };
       case RoleSetting.Hoist:
       case RoleSetting.Mentionable:
@@ -511,14 +535,20 @@ export function parseAction(actionString: string): tAction {
           value: tokens.slice(3)[0].image == 'true',
         };
       case RoleSetting.Name:
+        const name = tokens.slice(3).join(' ');
+        if (name.length < MIN_ROLE_LENGTH || name.length > MAX_ROLE_LENGTH) {
+          throw new ActionSyntaxError(
+            `Role name too long or too short (${MIN_ROLE_LENGTH}-${MAX_ROLE_LENGTH})`
+          );
+        }
         return {
           action: Action.ChangeRoleSetting,
           role: roleRef,
           setting,
-          value: tokens.slice(3).join(' '),
+          value: name,
         };
       default:
-        throw new Error(`Unrecognized role setting ${setting}`);
+        throw new ActionSyntaxError(`Unrecognized role setting ${setting}`);
     }
   }
 
@@ -531,7 +561,7 @@ export function parseAction(actionString: string): tAction {
     } else if (tokens[2].image == MoveRelativePosition.Below) {
       direction = MoveRelativePosition.Below;
     } else {
-      throw new Error('Unrecognized direction');
+      throw new ActionSyntaxError(`Unrecognized direction ${tokens[2].image}`);
     }
     return {
       action: Action.MoveRole,
@@ -550,7 +580,7 @@ export function parseAction(actionString: string): tAction {
     } else if (tokens[2].image == MoveRelativePosition.Below) {
       direction = MoveRelativePosition.Below;
     } else {
-      throw new Error('Unrecognized direction');
+      throw new ActionSyntaxError(`Unrecognized direction ${tokens[2].image}`);
     }
     return {
       action: Action.MoveChannel,
@@ -572,7 +602,14 @@ export function parseAction(actionString: string): tAction {
     } else if (tokens[1].image == ChannelType.Voice) {
       type = ChannelType.Voice;
     } else {
-      throw new Error('Unrecognized channel type');
+      throw new ActionSyntaxError(
+        `Unrecognized channel type ${tokens[1].image}`
+      );
+    }
+    if (name.length < MIN_CHANNEL_LENGTH || name.length > MAX_CHANNEL_LENGTH) {
+      throw new ActionSyntaxError(
+        `Channel name too long or too short (${MIN_CHANNEL_LENGTH}-${MAX_CHANNEL_LENGTH})`
+      );
     }
     return {
       action: Action.CreateChannel,
@@ -599,16 +636,28 @@ export function parseAction(actionString: string): tAction {
         value: parseChannelToken(tokens[2]),
       };
     } else if (setting == ServerSetting.AFKTimeout) {
+      const duration = parseDuration(tokens[2].image);
+      if (!duration) {
+        throw new ActionSyntaxError(`Invalid duration ${duration}`);
+      }
       return {
         action: Action.ChangeServerSetting,
         setting: ServerSetting.AFKTimeout,
-        value: parseDuration(tokens[2].image),
+        value: duration,
       };
     } else if (setting == ServerSetting.Name) {
       value = tokens
         .slice(2)
         .map((token) => token.image)
         .join(' ');
+      if (
+        value.length < MIN_SERVER_LENGTH ||
+        value.length > MAX_SERVER_LENGTH
+      ) {
+        throw new ActionSyntaxError(
+          `Server name too long or too short (${MIN_SERVER_LENGTH}-${MAX_SERVER_LENGTH})`
+        );
+      }
       return {
         action: Action.ChangeServerSetting,
         setting: ServerSetting.Name,
@@ -621,7 +670,7 @@ export function parseAction(actionString: string): tAction {
         value: tokens[2].image == 'true',
       };
     } else {
-      throw new Error('Unrecognized server setting');
+      throw new ActionSyntaxError(`Unrecognized server setting ${setting}`);
     }
   }
 
@@ -633,6 +682,24 @@ export function parseAction(actionString: string): tAction {
       .slice(3)
       .map((token) => token.image)
       .join(' ');
+    if (setting == ChannelSetting.Name) {
+      if (
+        value.length < MIN_CHANNEL_LENGTH ||
+        value.length > MAX_CHANNEL_LENGTH
+      ) {
+        throw new ActionSyntaxError(
+          `Channel name too long or too short (${MIN_CHANNEL_LENGTH}-${MAX_CHANNEL_LENGTH})`
+        );
+      }
+    } else if (setting == ChannelSetting.Topic) {
+      if (value.length < MIN_TOPIC_LENGTH || value.length > MAX_TOPIC_LENGTH) {
+        throw new ActionSyntaxError(
+          `Topic too long or too short (${MIN_TOPIC_LENGTH}-${MAX_TOPIC_LENGTH})`
+        );
+      }
+    } else {
+      throw new ActionSyntaxError(`Unrecognized channel setting ${setting}`);
+    }
     return {
       action: Action.ChangeChannelSetting,
       channel: channelRef,
@@ -641,5 +708,5 @@ export function parseAction(actionString: string): tAction {
     };
   }
 
-  throw new Error(`Unrecognized action ${actionToken.image}`);
+  throw new ActionSyntaxError(`Unrecognized action ${actionToken.image}`);
 }

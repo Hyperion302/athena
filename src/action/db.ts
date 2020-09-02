@@ -2,6 +2,7 @@
 
 import { tAction, parseAction } from '.';
 import { knex } from '../db';
+import { ResourceNotFoundError } from '../errors/ResourceNotFoundError';
 
 // NOTE: Does NOT validate the action once retrieved
 export async function getAction(
@@ -13,7 +14,9 @@ export async function getAction(
     .from('action')
     .where('proposal_id', proposal)
     .andWhere('id', index);
-  if (queryResults.length < 1) throw new Error('Action not found');
+  if (queryResults.length < 1) {
+    throw new ResourceNotFoundError('action', index.toString());
+  }
   return parseAction(queryResults[0].action_string);
 }
 

@@ -39,11 +39,11 @@ export async function handleProposalExpire(
   if (votes[Vote.Yes] > votes[Vote.No]) {
     // Pass, run actions
     const actions = await getActions(id);
-    const validation = await validateActions(
+    const actionsValidation = await validateActions(
       client.guilds.resolve(proposal.server),
       actions
     );
-    if (validation !== true) {
+    if (!actionsValidation.valid) {
       proposal.status = ProposalStatus.ExecutionError;
     } else {
       proposal.status = ProposalStatus.Passed;

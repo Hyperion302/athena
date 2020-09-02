@@ -1,7 +1,16 @@
 // Maximum values
-export const MAX_ROLE_NAME = 64;
-export const MAX_CHANNEL_NAME = 100;
-export const MIN_CHANNEL_NAME = 2;
+export const MAX_ROLE_LENGTH = 64;
+export const MIN_ROLE_LENGTH = 0;
+export const MAX_CHANNEL_LENGTH = 100;
+export const MIN_CHANNEL_LENGTH = 2;
+export const MAX_SERVER_LENGTH = 100;
+export const MIN_SERVER_LENGTH = 2;
+export const MIN_TOPIC_LENGTH = 0;
+export const MAX_TOPIC_LENGTH = 1024;
+export const MIN_COLOR = 0;
+export const MAX_COLOR = 16777215;
+
+export const MAX_ACTION_LENGTH = 2048;
 
 interface ActionList {
   [key: number]: tAction;
@@ -280,4 +289,12 @@ export {
 } from './db';
 export { getDurationString, actionAsHumanReadable } from './renderer';
 export { executeActions } from './executor';
-export { validateActions, validateAction } from './validator';
+export {
+  ReferenceValidationResult,
+  ReferenceValidationError,
+  ActionValidationResult,
+  ActionValidationError,
+  ProposalValidationResult,
+  validateActions,
+  validateAction,
+} from './validator';

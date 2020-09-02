@@ -1,6 +1,7 @@
 import { Proposal, ProposalStatus } from '.';
 import { Message } from 'discord.js';
 import { knex } from '../db';
+import { ResourceNotFoundError } from '../errors/ResourceNotFoundError';
 
 function schemaToObj(schema: any): Proposal {
   return {
@@ -94,7 +95,9 @@ export async function setExpirationDate(id: string, date: Date) {
 
 export async function getProposal(id: string): Promise<Proposal> {
   const query = await knex.select('*').from('proposal').where('id', id);
-  if (query.length < 1) throw new Error(`Proposal ${id} not found`);
+  if (query.length < 1) {
+    throw new ResourceNotFoundError('proposal', id);
+  }
   return schemaToObj(query[0]);
 }
 
@@ -114,7 +117,8 @@ export async function getProposalByMessage(
     .select('*')
     .from('proposal')
     .where('message_id', messageID);
-  if (query.length < 1)
-    throw new Error(`Proposal with message ID ${messageID} not found`);
+  if (query.length < 1) {
+    throw new ResourceNotFoundError('proposal', messageID);
+  }
   return schemaToObj(query[0]);
 }

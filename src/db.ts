@@ -15,6 +15,6 @@ export function connectToDB(user: string, pass: string, db: string) {
       },
     });
   } catch (e) {
-    throw new Error('Could not connecto to database');
+    throw new Error('Could not connect to database');
   }
 }
