@@ -4,8 +4,8 @@ import { Votes, countVotes, Vote } from './vote';
 import {
   tAction,
   getActions,
-  getDurationString,
-  actionAsHumanReadable,
+  renderAction,
+  renderDurationString,
 } from '../action';
 
 export async function getMessageObject(
@@ -61,7 +61,7 @@ export function generateProposalEmbed(
       },
       {
         name: 'Duration',
-        value: getDurationString(proposal.duration),
+        value: renderDurationString(proposal.duration),
         inline: false,
       },
     ],
@@ -106,7 +106,7 @@ export function generateProposalEmbed(
     let actionString = '';
     actions.forEach(
       (action, index) =>
-        (actionString = `${actionString}\n${index + 1}. ${actionAsHumanReadable(
+        (actionString = `${actionString}\n${index + 1}. ${renderAction(
           action
         )}`)
     );

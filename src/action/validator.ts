@@ -4,6 +4,7 @@ import {
   Action,
   tAction,
   ServerSetting,
+  ChannelType,
   MAX_CHANNEL_LENGTH,
   MIN_CHANNEL_LENGTH,
 } from '.';
@@ -144,6 +145,44 @@ async function validateUserOrRoleReference(
   return { valid: false, error: ReferenceValidationError.InvalidReferenceType };
 }
 
+async function validateCategoryReference(
+  server: Guild,
+  ref: ResourceReference
+): Promise<ReferenceValidationResult> {
+  if (ref.type == ReferenceType.ID) {
+    const channel = server.channels.cache.get(ref.id);
+    if (!channel) {
+      return { valid: false, error: ReferenceValidationError.NullReference };
+    }
+    if (channel.type != 'category') {
+      return {
+        valid: false,
+        error: ReferenceValidationError.InvalidReferenceType,
+      };
+    }
+    return { valid: true };
+  }
+  if (ref.type == ReferenceType.FullName) {
+    const channel = server.channels.cache.find(
+      (channel) => channel.name == ref.name
+    );
+    if (!channel) {
+      return { valid: false, error: ReferenceValidationError.NullReference };
+    }
+    if (channel.type != 'category') {
+      return {
+        valid: false,
+        error: ReferenceValidationError.InvalidReferenceType,
+      };
+    }
+    return { valid: true };
+  }
+  if (ref.type == ReferenceType.Pointer) {
+    return { valid: true };
+  }
+  return { valid: false, error: ReferenceValidationError.InvalidReferenceType };
+}
+
 // Validates a single action
 // NOTE: Ignores output reference validation
 // This isn't best practice
@@ -265,6 +304,24 @@ export async function validateAction(
       referenceValidations: [channelValidation],
     };
   }
+  if (action.action == Action.SetCategory) {
+    const channelValidation = validateChannelReference(server, action.channel);
+    const categoryValidation = await validateCategoryReference(
+      server,
+      action.category
+    );
+    return {
+      valid: channelValidation.valid && categoryValidation.valid,
+      referenceValidations: [channelValidation && categoryValidation],
+    };
+  }
+  if (action.action == Action.SyncToCategory) {
+    const channelValidation = validateChannelReference(server, action.channel);
+    return {
+      valid: channelValidation.valid,
+      referenceValidations: [channelValidation],
+    };
+  }
   return {
     valid: false,
     referenceValidations: [],
@@ -346,6 +403,7 @@ export async function validateActions(
       case Action.MoveChannel:
       case Action.DestroyChannel:
       case Action.RemovePermissionOverrideOn:
+      case Action.SyncToCategory:
         if (action.channel.type == ReferenceType.Pointer) {
           if (action.channel.index >= actions.length) {
             invalidActionIndices.push(index);
@@ -354,6 +412,37 @@ export async function validateActions(
           const referencedAction = actions[action.channel.index];
           if (referencedAction.action != Action.CreateChannel) {
             invalidActionIndices.push(index);
+          }
+        }
+        break;
+      // Special
+      case Action.SetCategory:
+        if (action.channel.type == ReferenceType.Pointer) {
+          if (action.channel.index >= actions.length) {
+            invalidActionIndices.push(index);
+            break;
+          }
+          const referencedAction = actions[action.channel.index];
+          if (
+            referencedAction.action != Action.CreateChannel ||
+            referencedAction.type == ChannelType.Category
+          ) {
+            invalidActionIndices.push(index);
+            break;
+          }
+        }
+        if (action.category.type == ReferenceType.Pointer) {
+          if (action.category.index >= actions.length) {
+            invalidActionIndices.push(index);
+            break;
+          }
+          const referencedAction = actions[action.category.index];
+          if (
+            referencedAction.action != Action.CreateChannel ||
+            referencedAction.type != ChannelType.Category
+          ) {
+            invalidActionIndices.push(index);
+            break;
           }
         }
         break;

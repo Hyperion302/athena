@@ -37,6 +37,8 @@ export const enum Action {
   DestroyChannel = 'destroy channel',
   ChangeServerSetting = 'change server setting',
   ChangeChannelSetting = 'change channel setting',
+  SetCategory = 'set category',
+  SyncToCategory = 'sync to category',
 }
 
 export enum RoleSetting {
@@ -67,6 +69,7 @@ export enum MoveRelativePosition {
 export enum ChannelType {
   Text = 'text',
   Voice = 'voice',
+  Category = 'category',
 }
 
 interface KickAction {
@@ -223,6 +226,17 @@ interface ChangeChannelSettingAction {
   value: string;
 }
 
+interface SetCategory {
+  action: Action.SetCategory;
+  channel: ResourceReference;
+  category: ResourceReference;
+}
+
+interface SyncToCategory {
+  action: Action.SyncToCategory;
+  channel: ResourceReference;
+}
+
 // Convenience union type
 export type tAction =
   | KickAction
@@ -240,7 +254,9 @@ export type tAction =
   | CreateChannelAction
   | DestroyChannelAction
   | ChangeServerSettingAction
-  | ChangeChannelSettingAction;
+  | ChangeChannelSettingAction
+  | SetCategory
+  | SyncToCategory;
 
 export enum ReferenceType {
   Pointer,
@@ -287,7 +303,7 @@ export {
   removeAction,
   insertAction,
 } from './db';
-export { getDurationString, actionAsHumanReadable } from './renderer';
+export { renderDurationString, renderAction } from './renderer';
 export { executeActions } from './executor';
 export {
   ReferenceValidationResult,

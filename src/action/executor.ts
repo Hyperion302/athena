@@ -5,6 +5,7 @@ import {
   GuildMember,
   GuildChannel,
   Permissions,
+  CategoryChannel,
 } from 'discord.js';
 import {
   tAction,
@@ -16,6 +17,7 @@ import {
   MoveRelativePosition,
   ChannelSetting,
 } from '.';
+import { ActionSyntaxError, ExecutionError } from '../errors';
 
 type ResourceList = (Channel | Role)[];
 
@@ -96,12 +98,19 @@ async function resolveUserReference(
         member.user.username == ref.username &&
         member.user.discriminator == ref.discriminator.toString()
     );
+    if (!user) {
+      throw new ActionSyntaxError(
+        `Null user reference ${ref.username}#${ref.discriminator}`
+      );
+    }
     return user;
   }
   if (ref.type == ReferenceType.ID) {
-    return await server.members.fetch(ref.id);
+    const user = await server.members.fetch(ref.id);
+    if (!user) throw new ActionSyntaxError(`Null user reference ${ref.id}`);
+    return user;
   }
-  throw new Error(`Unknown user reference type ${ref.type}`);
+  throw new ActionSyntaxError(`Unknown user reference type ${ref.type}`);
 }
 
 async function resolveChannelReference(
@@ -110,21 +119,29 @@ async function resolveChannelReference(
   ref: ResourceReference
 ): Promise<GuildChannel> {
   if (ref.type == ReferenceType.FullName) {
-    return server.channels.cache.find(
-      (channel) => channel.name == ref.name && channel.type == 'voice'
+    const channel = server.channels.cache.find(
+      (channel) => channel.name == ref.name
     );
+    if (!channel) {
+      throw new ActionSyntaxError(`Null channel reference "${ref.name}"`);
+    }
+    return channel;
   }
   if (ref.type == ReferenceType.ID) {
-    return server.channels.resolve(ref.id);
+    const channel = server.channels.resolve(ref.id);
+    if (!channel) {
+      throw new ActionSyntaxError(`Null channel reference ${ref.id}`);
+    }
+    return channel;
   }
   if (ref.type == ReferenceType.Pointer) {
     const channel = resourceList[ref.index];
     if (!(channel instanceof GuildChannel) || !channel) {
-      throw new Error('Invalid reference');
+      throw new ActionSyntaxError(`Null channel pointer ${ref.index}`);
     }
     return channel;
   }
-  throw new Error(`Unknown channel reference type ${ref.type}`);
+  throw new ActionSyntaxError(`Unknown channel reference type ${ref.type}`);
 }
 
 async function resolveRoleReference(
@@ -134,19 +151,23 @@ async function resolveRoleReference(
 ): Promise<Role> {
   if (ref.type == ReferenceType.FullName) {
     await server.roles.fetch();
-    return server.roles.cache.find((role) => role.name == ref.name);
+    const role = server.roles.cache.find((role) => role.name == ref.name);
+    if (!role) throw new ActionSyntaxError(`Null role reference "${ref.name}"`);
+    return role;
   }
   if (ref.type == ReferenceType.ID) {
-    return await server.roles.fetch(ref.id);
+    const role = await server.roles.fetch(ref.id);
+    if (!role) throw new ActionSyntaxError(`Null role reference ${ref.id}`);
+    return role;
   }
   if (ref.type == ReferenceType.Pointer) {
     const role = resourceList[ref.index];
     if (!(role instanceof Role) || !role) {
-      throw new Error('Invalid reference');
+      throw new ActionSyntaxError(`Null pointer ${ref.index}`);
     }
     return role;
   }
-  throw new Error(`Unknown role reference type ${ref.type}`);
+  throw new ActionSyntaxError(`Unknown role reference type ${ref.type}`);
 }
 
 async function resolveUserOrRoleReference(
@@ -156,7 +177,9 @@ async function resolveUserOrRoleReference(
 ): Promise<GuildMember | Role> {
   if (ref.type == ReferenceType.FullName) {
     await server.roles.fetch();
-    return server.roles.cache.find((role) => role.name == ref.name);
+    const role = server.roles.cache.find((role) => role.name == ref.name);
+    if (!role) throw new ActionSyntaxError(`Null role reference "${ref.name}"`);
+    return role;
   }
   if (ref.type == ReferenceType.ID) {
     try {
@@ -167,7 +190,7 @@ async function resolveUserOrRoleReference(
         const user = await server.members.fetch(ref.id);
         return user;
       } catch (e) {
-        throw new Error('Invalid reference');
+        throw new ActionSyntaxError(`Null role/user reference ${ref.id}`);
       }
     }
   }
@@ -178,16 +201,20 @@ async function resolveUserOrRoleReference(
         member.user.username == ref.username &&
         member.user.discriminator == ref.discriminator.toString()
     );
+    if (!user) {
+      throw new ActionSyntaxError(
+        `Null user reference ${ref.username}#${ref.discriminator}`
+      );
+    }
     return user;
   }
   if (ref.type == ReferenceType.Pointer) {
     const role = resourceList[ref.index];
     if (!(role instanceof Role) || !role) {
-      throw new Error('Invalid reference');
+      throw new ActionSyntaxError(`Null role pointer ${ref.index}`);
     }
     return role;
   }
-  throw new Error(`Invalid reference`);
 }
 export async function executeActions(
   server: Guild,
@@ -225,8 +252,8 @@ export async function executeActions(
             resourceList,
             action.value
           );
-          if (!afkChannel || afkChannel.type != 'voice') {
-            throw new Error('Voice channel not found');
+          if (afkChannel.type != 'voice') {
+            throw new ExecutionError(i, 'AFK channel must be voice channel');
           }
           await server.setAFKChannel(afkChannel);
           break;
@@ -344,7 +371,7 @@ export async function executeActions(
         resourceList,
         action.subject
       );
-      const overwrites: any = {};
+      const overwrites: { [key: string]: boolean } = {};
       action.allow.forEach((permission) => {
         overwrites[permissionToFlag(permission)] = true;
       });
@@ -405,7 +432,11 @@ export async function executeActions(
           newPos = Math.max(newPos, 0);
           break;
         case MoveRelativePosition.Below:
-          newPos = subjectPos;
+          if (channel.type == 'category') {
+            newPos = subjectPos + 1;
+          } else {
+            newPos = subjectPos;
+          }
           break;
       }
       await channel.setPosition(newPos);
@@ -417,6 +448,34 @@ export async function executeActions(
         action.channel
       );
       await channel.delete();
+    }
+    if (action.action == Action.SetCategory) {
+      const channel = await resolveChannelReference(
+        server,
+        resourceList,
+        action.channel
+      );
+      if (action.category == null) {
+        await channel.setParent(null);
+      } else {
+        const category = await resolveChannelReference(
+          server,
+          resourceList,
+          action.category
+        );
+        if (category.type != 'category') {
+          throw new ExecutionError(i, `Target category isn't category`);
+        }
+        await channel.setParent(category as CategoryChannel); // Must be casted since I check the type above
+      }
+    }
+    if (action.action == Action.SyncToCategory) {
+      const channel = await resolveChannelReference(
+        server,
+        resourceList,
+        action.channel
+      );
+      await channel.lockPermissions();
     }
   }
 }

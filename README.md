@@ -223,14 +223,10 @@ Fleshed out channel and server setting: Full support of all settings, multiple e
 
 Atomic Proposals: After an error, the proposal should undo its work
 
-Category support (URGENT): Support for categories. The bot isn't nearly as useful as it should be without this feature
+More clear wording when working with categories: It isn't immediately clear in some cases if what your working with is a category or a channel (eg. `move channel` also is meant to move categories). This could become standard, since categories _are just channels_, but I should pick either always calling categories 'parent channels' or always calling them categories (and making dedicated commands for them, like `move category`)
 
 # Future fixes
 
 Error handling & Fault Tolerance: Action validation should gracefully fail and properly inform the user where exactly the error occured. Failures during execution should also gracefully fail and the user should be allowed to retry execution.
 
 Better fetching: I should make use of member fetch queries to speed up member searching when resolving usernames
-
-# Immediate fixes
-
-Move action doesn't move???? (both channel and role)

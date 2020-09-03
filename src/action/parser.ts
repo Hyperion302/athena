@@ -274,7 +274,7 @@ function parseSubjectToken(token: IToken): ResourceReference {
     const username = match[1];
     const discrim = parseInt(match[2], 10);
     if (!(username && discrim)) {
-      throw new Error('Invalid username');
+      throw new ActionSyntaxError('Invalid username');
     }
     return {
       type: ReferenceType.Username,
@@ -601,6 +601,8 @@ export function parseAction(actionString: string): tAction {
       name = name.toLowerCase().replace(' ', '-');
     } else if (tokens[1].image == ChannelType.Voice) {
       type = ChannelType.Voice;
+    } else if (tokens[1].image == ChannelType.Category) {
+      type = ChannelType.Category;
     } else {
       throw new ActionSyntaxError(
         `Unrecognized channel type ${tokens[1].image}`
@@ -705,6 +707,33 @@ export function parseAction(actionString: string): tAction {
       channel: channelRef,
       setting,
       value,
+    };
+  }
+
+  if (actionName == Action.SetCategory) {
+    const channelRef = parseChannelToken(tokens[1]);
+    const parentToken = tokens[2];
+    if (parentToken.image == 'none') {
+      // Unset parent
+      return {
+        action: Action.SetCategory,
+        channel: channelRef,
+        category: null,
+      };
+    }
+    const parentRef = parseChannelToken(parentToken);
+    return {
+      action: Action.SetCategory,
+      channel: channelRef,
+      category: parentRef,
+    };
+  }
+
+  if (actionName == Action.SyncToCategory) {
+    const channelRef = parseChannelToken(tokens[1]);
+    return {
+      action: Action.SyncToCategory,
+      channel: channelRef,
     };
   }
 

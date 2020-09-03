@@ -6,3 +6,4 @@ export { OutOfBoundsError } from './OutOfBoundsError';
 export { ResourceNotFoundError } from './ResourceNotFoundError';
 export { StateError } from './StateError';
 export { ActionsValidationFailureError } from './ActionsValidationFailureError';
+export { ExecutionError } from './ExecutionError';

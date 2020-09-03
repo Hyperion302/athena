@@ -5,9 +5,10 @@ import {
   tAction,
   Action,
   ServerSetting,
+  ChannelType,
 } from '.';
 
-export function getDurationString(duration: number): string {
+export function renderDurationString(duration: number): string {
   if (duration < 60) return `${duration} seconds`;
   if (duration < 60 * 60) return `${Math.floor(duration / 60)} minutes`;
   if (duration < 60 * 60 * 24)
@@ -15,7 +16,7 @@ export function getDurationString(duration: number): string {
   return `${Math.floor(duration / (60 * 60 * 24))} days`;
 }
 
-function permissionAsHumanReadable(permission: number): string {
+function renderPermission(permission: number): string {
   const pflags = Permissions.FLAGS;
   switch (permission) {
     case pflags.ADMINISTRATOR:
@@ -81,7 +82,7 @@ function permissionAsHumanReadable(permission: number): string {
   }
 }
 
-function subjectAsHumanReadable(ref: ResourceReference): string {
+function renderSubject(ref: ResourceReference): string {
   if (ref.type == ReferenceType.FullName) {
     return ref.name;
   }
@@ -94,32 +95,28 @@ function subjectAsHumanReadable(ref: ResourceReference): string {
   return '<error>';
 }
 
-export function actionAsHumanReadable(action: tAction): string {
+export function renderAction(action: tAction): string {
   let readableString = '';
   switch (action.action) {
     case Action.Kick:
-      readableString = `Kick ${userReferenceAsHumanReadable(action.user)}`;
+      readableString = `Kick ${renderUserReference(action.user)}`;
       break;
     case Action.Ban:
-      readableString = `Ban ${userReferenceAsHumanReadable(action.user)}`;
+      readableString = `Ban ${renderUserReference(action.user)}`;
       break;
     case Action.CreateRole:
       readableString = `Create a role called ${action.name}`;
       break;
     case Action.DestroyRole:
-      readableString = `Destroy ${roleReferenceAsHumanReadable}`;
+      readableString = `Destroy ${renderRoleReference}`;
       break;
     case Action.ChangeRoleAssignment:
       // Grant Admin to a, b, c
       // Revoke Admin from a, b, c
       // Grant Admin to a, b, c and revoke it from d, e, f
-      const grantString = action.grant
-        .map(userReferenceAsHumanReadable)
-        .join(', ');
-      const revokeString = action.revoke
-        .map(userReferenceAsHumanReadable)
-        .join(', ');
-      const roleAssignmentString = roleReferenceAsHumanReadable(action.role);
+      const grantString = action.grant.map(renderUserReference).join(', ');
+      const revokeString = action.revoke.map(renderUserReference).join(', ');
+      const roleAssignmentString = renderRoleReference(action.role);
       if (action.grant.length && !action.revoke.length) {
         readableString = `Grant ${roleAssignmentString} to ${grantString}`;
       }
@@ -134,11 +131,9 @@ export function actionAsHumanReadable(action: tAction): string {
       // Grant a, b, c to Admin
       // Deny a, b, c of Admin
       // Grant a, b, c to Admin and deny it d, e, f
-      const allowString = action.allow
-        .map(permissionAsHumanReadable)
-        .join(', ');
-      const denyString = action.deny.map(permissionAsHumanReadable).join(', ');
-      const rolePermissionString = roleReferenceAsHumanReadable(action.role);
+      const allowString = action.allow.map(renderPermission).join(', ');
+      const denyString = action.deny.map(renderPermission).join(', ');
+      const rolePermissionString = renderRoleReference(action.role);
       if (action.allow.length && !action.deny.length) {
         readableString = `Grant ${allowString} to ${rolePermissionString}`;
       }
@@ -151,92 +146,78 @@ export function actionAsHumanReadable(action: tAction): string {
       break;
     case Action.ChangePermissionOverrideOn:
       // Change permission override on General for Admin to: Allow a, b, c Deny a, b, c Unset a, b, c
-      const overrideChannelString = channelReferenceAsHumanReadable(
-        action.channel
-      );
-      const allowOverrideString = action.allow
-        .map(permissionAsHumanReadable)
-        .join(', ');
-      const unsetOverrideString = action.unset
-        .map(permissionAsHumanReadable)
-        .join(', ');
-      const denyOverrideString = action.deny
-        .map(permissionAsHumanReadable)
-        .join(', ');
+      const overrideChannelString = renderChannelReference(action.channel);
+      const allowOverrideString = action.allow.map(renderPermission).join(', ');
+      const unsetOverrideString = action.unset.map(renderPermission).join(', ');
+      const denyOverrideString = action.deny.map(renderPermission).join(', ');
       const combinedOverrideString =
         (action.allow.length ? `Allow ${allowOverrideString} ` : '') +
         (action.deny.length ? `Deny ${denyOverrideString} ` : '') +
         (action.unset.length ? `Unset ${unsetOverrideString} ` : '');
-      readableString = `Change permission override on ${overrideChannelString} for ${subjectAsHumanReadable(
+      readableString = `Change permission override on ${overrideChannelString} for ${renderSubject(
         action.subject
       )} to: ${combinedOverrideString}`;
       break;
     case Action.AddPermissionOverrideOn:
       // Add permission override on General for Admin to: Allow a, b, c Deny a, b, c Unset a, b, c
-      const addOverrideChannelString = channelReferenceAsHumanReadable(
-        action.channel
-      );
+      const addOverrideChannelString = renderChannelReference(action.channel);
       const allowAddOverrideString = action.allow
-        .map(permissionAsHumanReadable)
+        .map(renderPermission)
         .join(', ');
       const unsetAddOverrideString = action.unset
-        .map(permissionAsHumanReadable)
+        .map(renderPermission)
         .join(', ');
       const denyAddOverrideString = action.deny
-        .map(permissionAsHumanReadable)
+        .map(renderPermission)
         .join(', ');
       const combinedAddOverrideString =
         (action.allow.length ? `Allow ${allowAddOverrideString} ` : '') +
         (action.deny.length ? `Deny ${denyAddOverrideString} ` : '') +
         (action.unset.length ? `Unset ${unsetAddOverrideString} ` : '');
-      readableString = `Add permission override on ${addOverrideChannelString} for ${subjectAsHumanReadable(
+      readableString = `Add permission override on ${addOverrideChannelString} for ${renderSubject(
         action.subject
       )} to: ${combinedAddOverrideString}`;
       break;
     case Action.RemovePermissionOverrideOn:
       // Remove permission override on General for Admin
-      readableString = `Remove permission override on ${channelReferenceAsHumanReadable(
+      readableString = `Remove permission override on ${renderChannelReference(
         action.channel
-      )} for ${subjectAsHumanReadable(action.subject)}`;
+      )} for ${renderSubject(action.subject)}`;
       break;
     case Action.ChangeRoleSetting:
       // Change duration to 2 on Admin
       readableString = `Change ${action.setting} to ${
         action.value
-      } on ${roleReferenceAsHumanReadable(action.role)}`;
+      } on ${renderRoleReference(action.role)}`;
       break;
     case Action.MoveRole:
       // Move Admin above Moderator
-      readableString = `Move ${roleReferenceAsHumanReadable(action.role)} ${
+      readableString = `Move ${renderRoleReference(action.role)} ${
         action.direction
-      } ${roleReferenceAsHumanReadable(action.subject)}`;
+      } ${renderRoleReference(action.subject)}`;
       break;
     case Action.MoveChannel:
       // Move General above Images
-      readableString = `Move ${channelReferenceAsHumanReadable(
-        action.channel
-      )} ${action.direction} ${channelReferenceAsHumanReadable(
-        action.subject
-      )}`;
+      readableString = `Move ${renderChannelReference(action.channel)} ${
+        action.direction
+      } ${renderChannelReference(action.subject)}`;
       break;
     case Action.CreateChannel:
-      readableString = `Create a ${action.type} channel called ${action.name}`;
+      readableString = `Create a ${action.type}${
+        action.type != ChannelType.Category ? ' channel' : ''
+      } called ${action.name}`;
       break;
     case Action.DestroyChannel:
-      readableString = `Destroy ${channelReferenceAsHumanReadable(
-        action.channel
-      )}`;
+      readableString = `Destroy ${renderChannelReference(action.channel)}`;
       break;
     case Action.ChangeServerSetting:
       let readableServerSettingValue: string;
       switch (action.setting) {
         case ServerSetting.AFKChannel:
-          readableServerSettingValue = channelReferenceAsHumanReadable(
-            action.value
-          );
+          readableServerSettingValue = renderChannelReference(action.value);
           break;
         case ServerSetting.AFKTimeout:
-          readableServerSettingValue = getDurationString(action.value);
+          readableServerSettingValue = renderDurationString(action.value);
           break;
         case ServerSetting.Name:
           readableServerSettingValue = action.value;
@@ -248,11 +229,19 @@ export function actionAsHumanReadable(action: tAction): string {
       readableString = `Change ${action.setting} to ${readableServerSettingValue}`;
       break;
     case Action.ChangeChannelSetting:
-      readableString = `Change ${
-        action.setting
-      } on ${channelReferenceAsHumanReadable(action.channel)} to ${
-        action.value
-      }`;
+      readableString = `Change ${action.setting} on ${renderChannelReference(
+        action.channel
+      )} to ${action.value}`;
+      break;
+    case Action.SetCategory:
+      readableString = `Put ${renderChannelReference(
+        action.channel
+      )} under ${renderChannelReference(action.category)}`;
+      break;
+    case Action.SyncToCategory:
+      readableString = `Sync ${renderChannelReference(
+        action.channel
+      )} to its parent category`;
       break;
     default:
       readableString = 'Could not parse action!';
@@ -263,7 +252,7 @@ export function actionAsHumanReadable(action: tAction): string {
 // Very similar to validation except it
 // operates on just strings and performs no network
 // requests
-function userReferenceAsHumanReadable(ref: ResourceReference): string {
+function renderUserReference(ref: ResourceReference): string {
   if (ref.type == ReferenceType.Username) {
     return `${ref.username}#${ref.discriminator}`;
   }
@@ -273,7 +262,7 @@ function userReferenceAsHumanReadable(ref: ResourceReference): string {
   return '<error>';
 }
 
-function roleReferenceAsHumanReadable(ref: ResourceReference): string {
+function renderRoleReference(ref: ResourceReference): string {
   if (ref.type == ReferenceType.FullName) {
     return ref.name;
   }
@@ -286,7 +275,7 @@ function roleReferenceAsHumanReadable(ref: ResourceReference): string {
   return '<error>';
 }
 
-function channelReferenceAsHumanReadable(ref: ResourceReference): string {
+function renderChannelReference(ref: ResourceReference): string {
   if (ref.type == ReferenceType.FullName) {
     return ref.name;
   }

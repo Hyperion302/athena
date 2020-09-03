@@ -128,6 +128,16 @@ const MoveRole = createToken({
   pattern: new RegExp(Action.MoveRole),
   longer_alt: PlainText,
 });
+const SetCategory = createToken({
+  name: Action.SetCategory,
+  pattern: new RegExp(Action.SetCategory),
+  longer_alt: PlainText,
+});
+const SyncToCategory = createToken({
+  name: Action.SyncToCategory,
+  pattern: new RegExp(Action.SyncToCategory),
+  longer_alt: PlainText,
+});
 
 // Permissions
 
@@ -342,6 +352,11 @@ const Voice = createToken({
   pattern: /voice/,
   longer_alt: PlainText,
 });
+const Category = createToken({
+  name: 'Category',
+  pattern: /category/,
+  longer_alt: PlainText,
+});
 const For = createToken({
   name: 'For',
   pattern: /for/,
@@ -398,6 +413,8 @@ const allTokens = [
   ChangeServerSetting,
   ChangeChannelSetting,
   ChangeRolePermissions,
+  SetCategory,
+  SyncToCategory,
   Administrator,
   CreateInvite,
   ManageChannels,
@@ -439,6 +456,7 @@ const allTokens = [
   Below,
   Text,
   Voice,
+  Category,
   For,
   // Identifiers
   Cross,

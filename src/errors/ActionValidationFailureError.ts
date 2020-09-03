@@ -22,6 +22,7 @@ export class ActionValidationFailureError extends Error {
         })
         .join('&');
       super(`Validation failures: ${errorString}`);
+      Error.captureStackTrace(this, this.constructor);
     }
   }
 }

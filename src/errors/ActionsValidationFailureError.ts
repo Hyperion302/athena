@@ -7,5 +7,6 @@ export class ActionsValidationFailureError extends Error {
         ' & '
       )} are invalid`
     );
+    Error.captureStackTrace(this, this.constructor);
   }
 }

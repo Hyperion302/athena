@@ -368,11 +368,11 @@ export async function executeCommand(
         'Only the proposal author can retry a proposal'
       );
     }
-    if (proposal.status != ProposalStatus.ExecutionError) {
-      throw new StateError(
-        'Proposal must have failed to implement to start a retry'
-      );
-    }
+    //if (proposal.status != ProposalStatus.ExecutionError) {
+    //  throw new StateError(
+    //    'Proposal must have failed to implement to start a retry'
+    //  );
+    //}
     await handleProposalExpire(messageObject.client, proposal.id);
   }
 }
