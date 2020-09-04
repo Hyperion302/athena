@@ -6,7 +6,6 @@ COPY package*.json ./
 COPY ts*.json ./
 COPY src/ src/
 COPY configuration.json ./
-COPY credentials.json ./
 
 RUN npm install
 
