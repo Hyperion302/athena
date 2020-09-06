@@ -215,6 +215,8 @@ add action 7df4d move channel \*3 below "General 2"
 
 Status evaluation: status command will check the bots perms and list any it's missing (and the actions it can't do without those permissions). It will also list any problems in the role hiearchy (immunity)
 
+Detailed help: Move help to a webpage (or github)
+
 Quorums: Custom quorums and vote ratio requirements beyond a simple majority no-quorum requirement
 
 Vote permission: A custom permission to allow or prohibit members from voting

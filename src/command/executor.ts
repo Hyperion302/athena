@@ -26,7 +26,14 @@ import {
   handleProposalExpire,
   setProposalDescription,
 } from '../proposal';
-import { Command, tCommand } from '.';
+import {
+  Command,
+  tCommand,
+  globalHelp,
+  proposalsHelp,
+  votingHelp,
+  actionsHelp,
+} from '.';
 import { Message } from 'discord.js';
 import {
   OutOfBoundsError,
@@ -374,5 +381,26 @@ export async function executeCommand(
       );
     }
     await handleProposalExpire(messageObject.client, proposal.id);
+  }
+
+  // HELP
+  if (command.command == Command.Help) {
+    if (!command.section.length) {
+      await messageObject.channel.send(globalHelp);
+      return;
+    }
+    switch (command.section) {
+      case 'proposals':
+        await messageObject.channel.send(proposalsHelp);
+        break;
+      case 'voting':
+        await messageObject.channel.send(votingHelp);
+        break;
+      case 'actions':
+        await messageObject.channel.send(actionsHelp);
+        break;
+      default:
+        await messageObject.channel.send(`Unknown section ${command.section}`);
+    }
   }
 }

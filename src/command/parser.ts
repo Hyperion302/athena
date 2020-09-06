@@ -191,4 +191,11 @@ export function parseCommand(command: string, channel: string): tCommand {
       id: params[0],
     };
   }
+  if (command.startsWith(Command.Help)) {
+    const section = command.slice(Command.Help.length).trim();
+    return {
+      command: Command.Help,
+      section,
+    };
+  }
 }
