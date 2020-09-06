@@ -64,13 +64,14 @@ export function parseCommand(command: string, channel: string): tCommand {
         );
       }
       field = 'description';
-    }
-    if (params[1] == 'duration') {
+    } else if (params[1] == 'duration') {
       value = parseDuration(params[2]);
       if (!value) {
         throw new CommandSyntaxError(`Invalid duration ${params[2]}`);
       }
       field = 'duration';
+    } else {
+      throw new CommandSyntaxError(`Unrecognized field ${params[1]}`);
     }
     return {
       command: Command.UpdateProposal,

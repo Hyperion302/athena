@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { parseCommand, executeCommand } from './command';
+import { parseCommand, executeCommand, tCommand } from './command';
 import { connectToDB } from './db';
 import { connectToDiscord, client } from './client';
 import {
@@ -20,6 +20,7 @@ import {
 } from './proposal';
 import { Message } from 'discord.js';
 import { getActions } from './action';
+import logger from './logging';
 
 // Startup procedure
 async function start() {
@@ -37,43 +38,74 @@ async function start() {
   // but that shouldn't matter if we're recovering from a crash.
   const hangingProposals = await getHangingProposals();
   hangingProposals.forEach((proposal) => {
-    console.log(`Current time: ${Date.now()}`);
     const remainingDuration = proposal.expiresOn.getTime() - Date.now();
     scheduleProposal(client, proposal, remainingDuration);
-    console.log(
-      `Scheduled proposal ${proposal.id} for closure in ${remainingDuration} milliseconds`
+    logger.info(
+      `Scheduled proposal ${proposal.id} for closure in ${remainingDuration} milliseconds`,
+      { proposal: proposal.id, remainingDuration }
     );
   });
   connectToDiscord(configuration.token);
 }
 
+function refreshStatus() {
+  const serverCount = client.guilds.cache.size; //TODO: Shard friendly
+  logger.info(`on ${serverCount} servers`, { servers: serverCount });
+  client.user
+    .setPresence({
+      activity: {
+        name: `${serverCount} servers | ".DRKT help" to get started`,
+        type: 'LISTENING',
+      },
+    })
+    .catch(logger.error);
+}
+
 client.on('ready', () => {
-  console.log('DRKT Logged on to Discord');
+  logger.info('DRKT Logged on to Discord');
+  refreshStatus();
+  client.setInterval(refreshStatus, 1800000);
 });
 
 client.on('message', async (message) => {
   const botMentionString = `<@!${client.user.id}>`;
-  if (message.content.startsWith(botMentionString)) {
-    const command = message.content.slice(botMentionString.length).trim();
-    let parsedCommand;
+  const prefix = '.DRKT';
+  if (
+    message.content.startsWith(botMentionString) ||
+    message.content.startsWith(prefix)
+  ) {
+    let command: string;
+    if (message.content.startsWith(botMentionString)) {
+      command = message.content.slice(botMentionString.length).trim();
+    } else {
+      command = message.content.slice(prefix.length).trim();
+    }
+    let parsedCommand: tCommand;
 
     // Parse command
     try {
       parsedCommand = parseCommand(command, message.channel.id);
     } catch (e) {
       await message.channel.send(`There was an error: ${e.message}`);
-      console.warn(e);
+      logger.info(`Command parsing error: `, e);
       return;
     }
 
     if (!parsedCommand) return;
+
+    logger.info(`Parsed command: ${command}`, {
+      parsedCommand,
+      user: message.author.id,
+      channel: message.channel.id,
+      server: message.guild.id,
+    });
 
     // Execute command
     try {
       await executeCommand(parsedCommand, message);
     } catch (e) {
       await message.channel.send(`There was an error: ${e.message}`);
-      console.warn(e);
+      logger.info(`Command execution error: `, e);
       return;
     }
   }
@@ -104,6 +136,11 @@ client.on('messageReactionAdd', async (reaction, user) => {
     vote = Vote.Yes;
   } else return;
   await addVote(proposal.id, user.id, vote);
+  logger.info(`User ${user.id} voted ${vote} for ${proposal.id}`, {
+    proposal: proposal.id,
+    vote,
+    user: user.id,
+  });
   const votes = await countVotes(proposal.id);
   const embed = generateProposalEmbed(proposal, votes);
   await refreshProposalMessage(client, proposal, embed);

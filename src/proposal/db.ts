@@ -2,6 +2,7 @@ import { Proposal, ProposalStatus } from '.';
 import { Message } from 'discord.js';
 import { knex } from '../db';
 import { ResourceNotFoundError } from '../errors/ResourceNotFoundError';
+import logger from '../logging';
 
 function schemaToObj(schema: any): Proposal {
   return {
@@ -39,13 +40,16 @@ export async function createProposal(
     .select('*')
     .from('proposal')
     .whereRaw('id = LAST_INSERT_ID()');
-  return schemaToObj(query[0]);
+  const proposal = schemaToObj(query[0]);
+  logger.info(`Created proposal ${proposal.id}`, proposal);
+  return proposal;
 }
 
 export async function deleteProposal(id: string) {
   await knex.table('vote').where('proposal_id', id).del();
   await knex.table('action').where('proposal_id', id).del();
   await knex.table('proposal').where('id', id).del();
+  logger.info(`Deleted proposal ${id}`, { proposal: id });
 }
 
 export async function setProposalMessage(id: string, message: Message) {
@@ -55,6 +59,10 @@ export async function setProposalMessage(id: string, message: Message) {
       message_id: message.id,
     })
     .where('id', id);
+  logger.info(`Set proposal ${id} message to ${message.id}`, {
+    proposal: id,
+    message: message.id,
+  });
 }
 
 export async function setProposalDescription(id: string, description: string) {
@@ -64,6 +72,10 @@ export async function setProposalDescription(id: string, description: string) {
       description,
     })
     .where('id', id);
+  logger.info(`Set proposal ${id} description to ${description}`, {
+    proposal: id,
+    description,
+  });
 }
 
 export async function setProposalDuration(id: string, duration: number) {
@@ -73,6 +85,10 @@ export async function setProposalDuration(id: string, duration: number) {
       duration,
     })
     .where('id', id);
+  logger.info(`Set proposal ${id} duration to ${duration}`, {
+    proposal: id,
+    duration,
+  });
 }
 
 export async function setProposalStatus(id: string, status: ProposalStatus) {
@@ -82,6 +98,10 @@ export async function setProposalStatus(id: string, status: ProposalStatus) {
       status,
     })
     .where('id', id);
+  logger.info(`Set proposal ${id} status to ${status}`, {
+    proposal: id,
+    status,
+  });
 }
 
 export async function setExpirationDate(id: string, date: Date) {
@@ -91,6 +111,10 @@ export async function setExpirationDate(id: string, date: Date) {
       expires_on: date,
     })
     .where('id', id);
+  logger.info(`Set proposal ${id} expiration date to ${date.getTime()}`, {
+    proposal: id,
+    date: date.getTime(),
+  });
 }
 
 export async function getProposal(id: string): Promise<Proposal> {

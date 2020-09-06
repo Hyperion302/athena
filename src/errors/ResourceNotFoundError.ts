@@ -1,6 +1,13 @@
+type tResource = 'action' | 'proposal';
 export class ResourceNotFoundError extends Error {
-  constructor(resource: 'action' | 'proposal', id: string) {
-    super(`${resource} ${id} not found`);
+  public resourceType: tResource;
+  public id: string;
+
+  constructor(resource: tResource, id: string) {
+    super(`${resource} '${id}' not found`);
+    this.resourceType = resource;
+    this.id = id;
+
     Error.captureStackTrace(this, this.constructor);
   }
 }

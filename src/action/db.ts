@@ -3,6 +3,7 @@
 import { tAction, parseAction } from '.';
 import { knex } from '../db';
 import { ResourceNotFoundError } from '../errors/ResourceNotFoundError';
+import logger from '../logging';
 
 // NOTE: Does NOT validate the action once retrieved
 export async function getAction(
@@ -64,6 +65,11 @@ export async function createAction(
       action_string: actionString,
     })
     .into('action');
+  logger.info(`Created action ${index} on ${proposal}: ${actionString}`, {
+    proposal,
+    index,
+    actionString,
+  });
   return index;
 }
 
@@ -79,6 +85,10 @@ export async function replaceAction(
     .update({ action_string: newActionString })
     .where('proposal_id', proposal)
     .andWhere('id', index);
+  logger.info(
+    `Replaced action ${index} on ${proposal} with ${newActionString}`,
+    { index, proposal, newActionString }
+  );
 }
 
 // Deletes an action and adjusts all indexes
@@ -99,6 +109,7 @@ export async function removeAction(
     .where('proposal_id', proposal)
     .andWhere('id', '>', index)
     .orderBy('id', 'asc');
+  logger.info(`Removed action ${index} on ${proposal}`, { index, proposal });
 }
 
 // Inserts an action and adjusts all indexes
@@ -122,4 +133,9 @@ export async function insertAction(
       action_string: actionString,
     })
     .into('action');
+  logger.info(`Inserted action ${index} on ${proposal}: ${actionString}`, {
+    index,
+    proposal,
+    actionString,
+  });
 }
