@@ -13,5 +13,6 @@ RUN npm install
 RUN npm run build
 
 ENV NODE_ENV production
+ENV GOOGLE_APPLICATION_CREDENTIALS credentials.json
 
 CMD node dist/index.js
