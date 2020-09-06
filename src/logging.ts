@@ -15,14 +15,13 @@ const logger = createLogger({
       level: production ? 'error' : 'silly',
       format: format.combine(format.colorize(), consoleFormat),
     }),
-    new LoggingWinston(),
   ],
 });
 
-//if (production) {
-//  const loggingWinston = new LoggingWinston({ projectId: projectID });
-//  logger.add(loggingWinston);
-//}
+if (production) {
+  const loggingWinston = new LoggingWinston({ projectId: projectID });
+  logger.add(loggingWinston);
+}
 
 logger.info(
   `Logger configured in ${production ? 'production' : 'development'} mode`
