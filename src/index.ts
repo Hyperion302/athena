@@ -50,7 +50,9 @@ async function start() {
 
 function refreshStatus() {
   const serverCount = client.guilds.cache.size; //TODO: Shard friendly
-  logger.info(`on ${serverCount} servers`, { servers: serverCount });
+  logger.info(`DRKT now running on ${serverCount} servers`, {
+    servers: serverCount,
+  });
   client.user
     .setPresence({
       activity: {
@@ -62,7 +64,9 @@ function refreshStatus() {
 }
 
 client.on('ready', () => {
-  logger.info('DRKT Logged on to Discord');
+  logger.info(`DRKT now ready on ${client.guilds.cache.size}`, {
+    servers: client.guilds.cache.size,
+  }); // TODO: Shard friendly
   refreshStatus();
   client.setInterval(refreshStatus, 1800000);
 });
@@ -87,7 +91,7 @@ client.on('message', async (message) => {
       parsedCommand = parseCommand(command, message.channel.id);
     } catch (e) {
       await message.channel.send(`There was an error: ${e.message}`);
-      logger.info(`Command parsing error: `, e);
+      logger.info('Error encountered while parsing command:', e);
       return;
     }
 
@@ -105,7 +109,7 @@ client.on('message', async (message) => {
       await executeCommand(parsedCommand, message);
     } catch (e) {
       await message.channel.send(`There was an error: ${e.message}`);
-      logger.info(`Command execution error: `, e);
+      logger.info('Error encountered while executing command:', e);
       return;
     }
   }
@@ -113,8 +117,6 @@ client.on('message', async (message) => {
 
 // NOTE: I ignore non-utf8 emoji (custom server emoji)
 client.on('messageReactionAdd', async (reaction, user) => {
-  if (user.id == client.user.id) return;
-  if (reaction.partial) await reaction.fetch(); // TODO: Handle errors
   let proposal: Proposal;
   let vote: Vote;
   try {
@@ -122,47 +124,63 @@ client.on('messageReactionAdd', async (reaction, user) => {
   } catch (e) {
     return;
   }
-  // Since we know this is a proposal, remove the reaction if it's a thumbs up or down
-  if (reaction.emoji.name == '👎' || reaction.emoji.name == '👍')
-    await reaction.remove();
+  try {
+    if (user.id == client.user.id) return;
+    if (reaction.partial) await reaction.fetch(); // TODO: Handle errors
 
-  // Can't vote if proposal isn't running
-  if (proposal.status != ProposalStatus.Running) return;
+    // Since we know this is a proposal, remove the reaction if it's a thumbs up or down
+    if (reaction.emoji.name == '👎' || reaction.emoji.name == '👍')
+      await reaction.remove();
 
-  // If it's a vote, count it
-  if (reaction.emoji.name == '👎') {
-    vote = Vote.No;
-  } else if (reaction.emoji.name == '👍') {
-    vote = Vote.Yes;
-  } else return;
-  await addVote(proposal.id, user.id, vote);
-  logger.info(`User ${user.id} voted ${vote} for ${proposal.id}`, {
-    proposal: proposal.id,
-    vote,
-    user: user.id,
-  });
-  const votes = await countVotes(proposal.id);
-  const embed = generateProposalEmbed(proposal, votes);
-  await refreshProposalMessage(client, proposal, embed);
+    // Can't vote if proposal isn't running
+    if (proposal.status != ProposalStatus.Running) return;
+
+    // If it's a vote, count it
+    if (reaction.emoji.name == '👎') {
+      vote = Vote.No;
+    } else if (reaction.emoji.name == '👍') {
+      vote = Vote.Yes;
+    } else return;
+    await addVote(proposal.id, user.id, vote);
+    logger.info(`User ${user.id} voted ${vote} for ${proposal.id}`, {
+      proposal: proposal.id,
+      vote,
+      user: user.id,
+    });
+    const votes = await countVotes(proposal.id);
+    const embed = generateProposalEmbed(proposal, votes);
+    await refreshProposalMessage(client, proposal, embed);
+  } catch (e) {
+    logger.warn(`Error encountered while counting vote:`, e);
+  }
 });
 
 async function onSingleDelete(message: Message) {
   // If the message is partial, it doesn't matter.  I only use it's ID and channel (always cached) anyway
   // If the proposal is running, cancel and resend
   // If it's not running, delete
-  const proposal = await getProposalByMessage(message.id);
-  if (proposal.status == ProposalStatus.Running) {
-    if (gIntervalList[proposal.id]) clearTimeout(gIntervalList[proposal.id]);
-    await setProposalStatus(proposal.id, ProposalStatus.Cancelled);
-    proposal.status = ProposalStatus.Cancelled;
-    const votes = await countVotes(proposal.id);
-    const actions = await getActions(proposal.id);
-    const newMessage = await message.channel.send(
-      generateProposalEmbed(proposal, votes, actions)
-    );
-    await setProposalMessage(proposal.id, newMessage);
-  } else {
-    await deleteProposal(proposal.id);
+  let proposal: Proposal;
+  try {
+    proposal = await getProposalByMessage(message.id);
+  } catch (e) {
+    return;
+  }
+  try {
+    if (proposal.status == ProposalStatus.Running) {
+      if (gIntervalList[proposal.id]) clearTimeout(gIntervalList[proposal.id]);
+      await setProposalStatus(proposal.id, ProposalStatus.Cancelled);
+      proposal.status = ProposalStatus.Cancelled;
+      const votes = await countVotes(proposal.id);
+      const actions = await getActions(proposal.id);
+      const newMessage = await message.channel.send(
+        generateProposalEmbed(proposal, votes, actions)
+      );
+      await setProposalMessage(proposal.id, newMessage);
+    } else {
+      await deleteProposal(proposal.id);
+    }
+  } catch (e) {
+    logger.warn(`Error encountered while handling delete:`, e);
   }
 }
 
