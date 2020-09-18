@@ -535,7 +535,10 @@ export function parseAction(actionString: string): tAction {
           value: tokens.slice(3)[0].image == 'true',
         };
       case RoleSetting.Name:
-        const name = tokens.slice(3).join(' ');
+        const name = tokens
+          .slice(3)
+          .map((token) => token.image)
+          .join(' ');
         if (name.length < MIN_ROLE_LENGTH || name.length > MAX_ROLE_LENGTH) {
           throw new ActionSyntaxError(
             `Role name too long or too short (${MIN_ROLE_LENGTH}-${MAX_ROLE_LENGTH})`
