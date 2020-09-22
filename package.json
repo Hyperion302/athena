@@ -6,8 +6,8 @@
   "scripts": {
     "prebuild": "tslint -c tslint.json -p tsconfig.json --fix",
     "build": "tsc",
-    "start": "ts-node src/index.ts",
-    "start:dev": "tsnd src/index.ts",
+    "start": "ts-node -r dotenv/config src/index.ts",
+    "start:dev": "tsnd -r dotenv/config src/index.ts",
     "start:proxy": "cloud_sql_proxy -instances=direct-discord-democracy:us-central1:drkt-instance=tcp:3306 -credential_file=credentials.json",
     "start:proxy:docker": "docker run -d -v $(pwd)/credentials.json:/credentials.json -p 127.0.0.1:3306:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=direct-discord-democracy:us-central1:drkt-instance=tcp:0.0.0.0:3306 -credential_file=/credentials.json"
   },
@@ -24,6 +24,7 @@
     "array-flat-polyfill": "^1.0.1",
     "chevrotain": "^7.0.1",
     "discord.js": "^12.2.0",
+    "dotenv": "^8.2.0",
     "knex": "^0.21.4",
     "mysql2": "^2.1.0",
     "ts-node-dev": "^1.0.0-pre.56",

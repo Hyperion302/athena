@@ -1,4 +1,3 @@
-import { readFileSync } from 'fs';
 import { parseCommand, executeCommand, tCommand } from './command';
 import { connectToDB } from './db';
 import { connectToDiscord, client } from './client';
@@ -21,18 +20,20 @@ import {
 import { Message } from 'discord.js';
 import { getActions } from './action';
 import logger from './logging';
+import { InternalError } from './errors/InternalError';
 
 // Startup procedure
 async function start() {
-  const configuration = JSON.parse(
-    readFileSync('configuration.json').toString()
-  );
+  const SQLUser = process.env.SQL_USER;
+  if (!SQLUser) throw new InternalError('Invalid SQL User');
+  const SQLPass = process.env.SQL_PASS;
+  if (!SQLPass) throw new InternalError('Invalid SQL Pass');
+  const SQLDB = process.env.SQL_DB;
+  if (!SQLDB) throw new InternalError('Invalid SQL DB');
+  const botToken = process.env.BOT_TOKEN;
+  if (!botToken) throw new InternalError('Invalid Bot Token');
   // Connect to DB
-  connectToDB(
-    configuration.SQLUser,
-    configuration.SQLPass,
-    configuration.SQLDB
-  );
+  connectToDB(SQLUser, SQLPass, SQLDB);
   // Build timer table
   // NOTE: I've determined that there could be a ~10 second error here,
   // but that shouldn't matter if we're recovering from a crash.
@@ -45,7 +46,7 @@ async function start() {
       { proposal: proposal.id, remainingDuration }
     );
   });
-  connectToDiscord(configuration.token);
+  connectToDiscord(botToken);
 }
 
 function refreshStatus() {
