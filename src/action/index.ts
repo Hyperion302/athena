@@ -130,3 +130,4 @@ export {
   validateActions,
   validateAction,
 } from './validator';
+export { tAction } from './actions';

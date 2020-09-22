@@ -16,8 +16,8 @@ export interface CreateChannelAction {
   type: ChannelType;
 }
 export const createChannelToken = createToken({
-  name: Action.CreateRole,
-  pattern: new RegExp(Action.CreateRole),
+  name: Action.CreateChannel,
+  pattern: new RegExp(Action.CreateChannel),
   longer_alt: PlainText,
 });
 export function parseCreateChannelAction(

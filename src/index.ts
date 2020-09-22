@@ -22,6 +22,8 @@ import { getActions } from './action';
 import logger from './logging';
 import { InternalError } from './errors/InternalError';
 
+const production = process.env.NODE_ENV === 'production';
+
 // Startup procedure
 async function start() {
   const SQLUser = process.env.SQL_USER;
@@ -75,15 +77,20 @@ client.on('ready', () => {
 client.on('message', async (message) => {
   const botMentionString = `<@!${client.user.id}>`;
   const prefix = '.DRKT';
+  const devPrefix = '.DRKT_DEV';
   if (
-    message.content.startsWith(botMentionString) ||
-    message.content.startsWith(prefix)
+    ((message.content.startsWith(botMentionString) ||
+      message.content.startsWith(prefix)) &&
+      production) ||
+    (message.content.startsWith(devPrefix) && !production)
   ) {
     let command: string;
     if (message.content.startsWith(botMentionString)) {
       command = message.content.slice(botMentionString.length).trim();
-    } else {
+    } else if (production) {
       command = message.content.slice(prefix.length).trim();
+    } else {
+      command = message.content.slice(devPrefix.length).trim();
     }
     let parsedCommand: tCommand;
 
