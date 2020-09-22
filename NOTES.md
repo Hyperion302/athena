@@ -215,8 +215,6 @@ add action 7df4d move channel \*3 below "General 2"
 
 Status evaluation: status command will check the bots perms and list any it's missing (and the actions it can't do without those permissions). It will also list any problems in the role hiearchy (immunity)
 
-Detailed help: Move help to a webpage (or github)
-
 Add emoji actions (create, destroy, rename)
 
 Server setting to set the proposal channel
