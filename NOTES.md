@@ -235,6 +235,8 @@ Add voice moderation actions (mute, deafen, move)
 
 Add the ability to update titles
 
+Better voting: If you vote the opposite way it switches your vote for you
+
 Nonexistent resource errors should tell you what resource doesn't exist
 
 Quorums: Custom quorums and vote ratio requirements beyond a simple majority no-quorum requirement
@@ -248,10 +250,6 @@ Atomic Proposals: After an error, the proposal should undo its work
 More clear wording when working with categories: It isn't immediately clear in some cases if what your working with is a category or a channel (eg. `move channel` also is meant to move categories). This could become standard, since categories _are just channels_, but I should pick either always calling categories 'parent channels' or always calling them categories (and making dedicated commands for them, like `move category`)
 
 # Future fixes
-
-Bad rendering on change role setting
-
-Updating duration has no cap
 
 Error handling & Fault Tolerance: Action validation should gracefully fail and properly inform the user where exactly the error occured. Failures during execution should also gracefully fail and the user should be allowed to retry execution.
 

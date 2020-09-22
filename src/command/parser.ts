@@ -3,6 +3,8 @@ import {
   tCommand,
   MIN_PROPOSAL_DESCRIPTION_LENGTH,
   MAX_PROPOSAL_DESCRIPTION_LENGTH,
+  MAX_DURATION,
+  MIN_DURATION,
 } from '.';
 import { parseDuration, parseAction } from '../action';
 import { CommandSyntaxError } from '../errors/CommandSyntaxError';
@@ -17,6 +19,9 @@ export function parseCommand(command: string, channel: string): tCommand {
     const duration = parseDuration(durationString);
     if (!duration) {
       throw new CommandSyntaxError(`Invalid duration ${durationString}`);
+    }
+    if (duration > MAX_DURATION || duration < MIN_DURATION) {
+      throw new CommandSyntaxError(`Duration too long or too short (5s to 2d)`);
     }
     const name = params.join(' ');
     return {
@@ -68,6 +73,11 @@ export function parseCommand(command: string, channel: string): tCommand {
       value = parseDuration(params[2]);
       if (!value) {
         throw new CommandSyntaxError(`Invalid duration ${params[2]}`);
+      }
+      if (value > MAX_DURATION || value < MIN_DURATION) {
+        throw new CommandSyntaxError(
+          `Duration too long or too short (5s to 2d)`
+        );
       }
       field = 'duration';
     } else {
