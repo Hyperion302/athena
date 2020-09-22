@@ -95,6 +95,11 @@ export function generateProposalEmbed(
         inline: true,
       },
       {
+        name: '👀',
+        value: votes[Vote.Abstain],
+        inline: true,
+      },
+      {
         name: '👎',
         value: votes[Vote.No],
         inline: true,

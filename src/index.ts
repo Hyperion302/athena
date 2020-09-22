@@ -136,9 +136,14 @@ client.on('messageReactionAdd', async (reaction, user) => {
     if (user.id == client.user.id) return;
     if (reaction.partial) await reaction.fetch(); // TODO: Handle errors
 
-    // Since we know this is a proposal, remove the reaction if it's a thumbs up or down
-    if (reaction.emoji.name == '👎' || reaction.emoji.name == '👍')
+    // Since we know this is a proposal, remove the reaction if it's a vote
+    if (
+      reaction.emoji.name == '👎' ||
+      reaction.emoji.name == '👍' ||
+      reaction.emoji.name == '👀'
+    ) {
       await reaction.remove();
+    }
 
     // Can't vote if proposal isn't running
     if (proposal.status != ProposalStatus.Running) return;
@@ -148,7 +153,11 @@ client.on('messageReactionAdd', async (reaction, user) => {
       vote = Vote.No;
     } else if (reaction.emoji.name == '👍') {
       vote = Vote.Yes;
-    } else return;
+    } else if (reaction.emoji.name == '👀') {
+      vote = Vote.Abstain;
+    } else {
+      return;
+    }
     await addVote(proposal.id, user.id, vote);
     logger.info(`User ${user.id} voted ${vote} for ${proposal.id}`, {
       proposal: proposal.id,
