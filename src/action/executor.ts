@@ -7,8 +7,8 @@ import {
   Permissions,
   CategoryChannel,
 } from 'discord.js';
+import { create } from 'domain';
 import {
-  tAction,
   ResourceReference,
   ReferenceType,
   Action,
@@ -18,10 +18,11 @@ import {
   ChannelSetting,
 } from '.';
 import { ActionSyntaxError, ExecutionError } from '../errors';
+import { executors, tAction } from './actions';
 
-type ResourceList = (Channel | Role)[];
+export type ResourceList = (Channel | Role)[];
 
-function permissionToFlag(permission: number): string {
+export function permissionToFlag(permission: number): string {
   const pflags = Permissions.FLAGS;
   switch (permission) {
     case pflags.ADMINISTRATOR:
@@ -87,7 +88,7 @@ function permissionToFlag(permission: number): string {
   }
 }
 
-async function resolveUserReference(
+export async function resolveUserReference(
   server: Guild,
   ref: ResourceReference
 ): Promise<GuildMember> {
@@ -113,7 +114,7 @@ async function resolveUserReference(
   throw new ActionSyntaxError(`Unknown user reference type ${ref.type}`);
 }
 
-async function resolveChannelReference(
+export async function resolveChannelReference(
   server: Guild,
   resourceList: ResourceList,
   ref: ResourceReference
@@ -144,7 +145,7 @@ async function resolveChannelReference(
   throw new ActionSyntaxError(`Unknown channel reference type ${ref.type}`);
 }
 
-async function resolveRoleReference(
+export async function resolveRoleReference(
   server: Guild,
   resourceList: ResourceList,
   ref: ResourceReference
@@ -170,7 +171,7 @@ async function resolveRoleReference(
   throw new ActionSyntaxError(`Unknown role reference type ${ref.type}`);
 }
 
-async function resolveUserOrRoleReference(
+export async function resolveUserOrRoleReference(
   server: Guild,
   resourceList: ResourceList,
   ref: ResourceReference
@@ -224,258 +225,9 @@ export async function executeActions(
   // For loop so it's easier to use await
   for (let i = 0; i < actions.length; i++) {
     const action = actions[i];
-    if (action.action == Action.Kick) {
-      const user = await resolveUserReference(server, action.user);
-      await user.kick();
-    }
-    if (action.action == Action.Ban) {
-      const user = await resolveUserReference(server, action.user);
-      await user.ban();
-    }
-    if (action.action == Action.CreateRole) {
-      const createdRole = await server.roles.create({
-        data: { name: action.name },
-      });
-      resourceList[i] = createdRole;
-    }
-    if (action.action == Action.CreateChannel) {
-      const channel = await server.channels.create(action.name, {
-        type: action.type,
-      });
-      resourceList[i] = channel;
-    }
-    if (action.action == Action.ChangeServerSetting) {
-      switch (action.setting) {
-        case ServerSetting.AFKChannel:
-          const afkChannel = await resolveChannelReference(
-            server,
-            resourceList,
-            action.value
-          );
-          if (afkChannel.type != 'voice') {
-            throw new ExecutionError(i, 'AFK channel must be voice channel');
-          }
-          await server.setAFKChannel(afkChannel);
-          break;
-        case ServerSetting.AFKTimeout:
-          await server.setAFKTimeout(action.value);
-          break;
-        case ServerSetting.ContentFilter:
-          await server.setExplicitContentFilter(
-            action.value ? 'ALL_MEMBERS' : 'DISABLED'
-          );
-          break;
-        case ServerSetting.Name:
-          await server.setName(action.value);
-          break;
-      }
-    }
-    if (action.action == Action.DestroyRole) {
-      const role = await resolveRoleReference(
-        server,
-        resourceList,
-        action.role
-      );
-      await role.delete();
-      if (action.role.type == ReferenceType.Pointer) {
-        delete resourceList[action.role.index];
-      }
-    }
-    if (action.action == Action.ChangeRoleAssignment) {
-      const role = await resolveRoleReference(
-        server,
-        resourceList,
-        action.role
-      );
-      const grantPromises = action.grant.map(async (user) => {
-        const resolvedUser = await resolveUserReference(server, user);
-        await resolvedUser.roles.add(role);
-      });
-      const revokePromises = action.revoke.map(async (user) => {
-        const resolvedUser = await resolveUserReference(server, user);
-        await resolvedUser.roles.remove(role);
-      });
-      await Promise.all([...grantPromises, ...revokePromises]);
-    }
-    if (action.action == Action.ChangeRolePermissions) {
-      const role = await resolveRoleReference(
-        server,
-        resourceList,
-        action.role
-      );
-      let permissionBits = role.permissions;
-      action.allow.forEach(
-        (permission) => (permissionBits = permissionBits.add(permission))
-      );
-      action.deny.forEach(
-        (permission) => (permissionBits = permissionBits.remove(permission))
-      );
-      await role.setPermissions(permissionBits);
-    }
-    if (action.action == Action.ChangeRoleSetting) {
-      const role = await resolveRoleReference(
-        server,
-        resourceList,
-        action.role
-      );
-      switch (action.setting) {
-        case RoleSetting.Color:
-          await role.setColor(action.value);
-          break;
-        case RoleSetting.Hoist:
-          await role.setHoist(action.value);
-          break;
-        case RoleSetting.Mentionable:
-          await role.setMentionable(action.value);
-          break;
-        case RoleSetting.Name:
-          await role.setName(action.value);
-          break;
-      }
-    }
-    if (action.action == Action.MoveRole) {
-      const role = await resolveRoleReference(
-        server,
-        resourceList,
-        action.role
-      );
-      const relativeTo = await resolveRoleReference(
-        server,
-        resourceList,
-        action.subject
-      );
-      const subjectPos = relativeTo.position;
-      let newPos = 0;
-      switch (action.direction) {
-        case MoveRelativePosition.Above:
-          newPos = subjectPos; // Setting the same position will force the stack downwards
-          break;
-        case MoveRelativePosition.Below:
-          newPos = subjectPos - 1;
-          newPos = Math.max(newPos, 0); // Clamp at 0
-          break;
-      }
-      await role.setPosition(newPos);
-    }
-    if (
-      action.action == Action.AddPermissionOverrideOn ||
-      action.action == Action.ChangePermissionOverrideOn
-    ) {
-      const channel = await resolveChannelReference(
-        server,
-        resourceList,
-        action.channel
-      );
-      const subject = await resolveUserOrRoleReference(
-        server,
-        resourceList,
-        action.subject
-      );
-      const overwrites: { [key: string]: boolean } = {};
-      action.allow.forEach((permission) => {
-        overwrites[permissionToFlag(permission)] = true;
-      });
-      action.unset.forEach((permission) => {
-        overwrites[permissionToFlag(permission)] = null;
-      });
-      action.deny.forEach((permission) => {
-        overwrites[permissionToFlag(permission)] = false;
-      });
-      await channel.createOverwrite(subject, overwrites);
-    }
-    if (action.action == Action.RemovePermissionOverrideOn) {
-      const channel = await resolveChannelReference(
-        server,
-        resourceList,
-        action.channel
-      );
-      const removeSubject = await resolveUserOrRoleReference(
-        server,
-        resourceList,
-        action.subject
-      );
-      const overwrites = channel.permissionOverwrites;
-      overwrites.delete(removeSubject.id);
-      await channel.overwritePermissions(overwrites);
-    }
-    if (action.action == Action.ChangeChannelSetting) {
-      const channel = await resolveChannelReference(
-        server,
-        resourceList,
-        action.channel
-      );
-      switch (action.setting) {
-        case ChannelSetting.Name:
-          await channel.setName(action.value);
-          break;
-        case ChannelSetting.Topic:
-          if (channel.type != 'text') break;
-          await channel.setTopic(action.value);
-      }
-    }
-    if (action.action == Action.MoveChannel) {
-      const channel = await resolveChannelReference(
-        server,
-        resourceList,
-        action.channel
-      );
-      const relativeTo = await resolveChannelReference(
-        server,
-        resourceList,
-        action.subject
-      );
-      const subjectPos = relativeTo.position;
-      let newPos = 0;
-      switch (action.direction) {
-        case MoveRelativePosition.Above:
-          newPos = subjectPos - 1;
-          newPos = Math.max(newPos, 0);
-          break;
-        case MoveRelativePosition.Below:
-          if (channel.type == 'category') {
-            newPos = subjectPos + 1;
-          } else {
-            newPos = subjectPos;
-          }
-          break;
-      }
-      await channel.setPosition(newPos);
-    }
-    if (action.action == Action.DestroyChannel) {
-      const channel = await resolveChannelReference(
-        server,
-        resourceList,
-        action.channel
-      );
-      await channel.delete();
-    }
-    if (action.action == Action.SetCategory) {
-      const channel = await resolveChannelReference(
-        server,
-        resourceList,
-        action.channel
-      );
-      if (action.category == null) {
-        await channel.setParent(null);
-      } else {
-        const category = await resolveChannelReference(
-          server,
-          resourceList,
-          action.category
-        );
-        if (category.type != 'category') {
-          throw new ExecutionError(i, `Target category isn't category`);
-        }
-        await channel.setParent(category as CategoryChannel); // Must be casted since I check the type above
-      }
-    }
-    if (action.action == Action.SyncToCategory) {
-      const channel = await resolveChannelReference(
-        server,
-        resourceList,
-        action.channel
-      );
-      await channel.lockPermissions();
-    }
+    const executor = executors[action.action];
+    if (!executor) continue;
+    const createdResource = await executor(server, action, resourceList, i);
+    if (createdResource) resourceList[i] = createdResource;
   }
 }

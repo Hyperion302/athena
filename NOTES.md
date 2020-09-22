@@ -217,6 +217,26 @@ Status evaluation: status command will check the bots perms and list any it's mi
 
 Detailed help: Move help to a webpage (or github)
 
+Add emoji actions (create, destroy, rename)
+
+Server setting to set the proposal channel
+
+Move proposal command
+
+Extend voting period during runtime
+
+Bring the proposal back to building during runtime
+
+Alerts when a proposal finishes
+
+Check if the bot permissions allow it to execute an action before adding it
+
+Add voice moderation actions (mute, deafen, move)
+
+Add the ability to update titles
+
+Nonexistent resource errors should tell you what resource doesn't exist
+
 Quorums: Custom quorums and vote ratio requirements beyond a simple majority no-quorum requirement
 
 Vote permission: A custom permission to allow or prohibit members from voting
@@ -228,6 +248,10 @@ Atomic Proposals: After an error, the proposal should undo its work
 More clear wording when working with categories: It isn't immediately clear in some cases if what your working with is a category or a channel (eg. `move channel` also is meant to move categories). This could become standard, since categories _are just channels_, but I should pick either always calling categories 'parent channels' or always calling them categories (and making dedicated commands for them, like `move category`)
 
 # Future fixes
+
+Bad rendering on change role setting
+
+Updating duration has no cap
 
 Error handling & Fault Tolerance: Action validation should gracefully fail and properly inform the user where exactly the error occured. Failures during execution should also gracefully fail and the user should be allowed to retry execution.
 

@@ -49,7 +49,7 @@ async function start() {
 }
 
 function refreshStatus() {
-  const serverCount = client.guilds.cache.size; //TODO: Shard friendly
+  const serverCount = client.guilds.cache.size; // TODO: Shard friendly
   logger.info(`DRKT now running on ${serverCount} servers`, {
     servers: serverCount,
   });

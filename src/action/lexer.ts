@@ -1,143 +1,15 @@
 import * as chevrotain from 'chevrotain';
 import { Action } from '.';
+import { actionTokens } from './actions';
 
 const createToken = chevrotain.createToken;
 
-const PlainText = createToken({
+export const PlainText = createToken({
   name: 'PlainText',
   pattern: /[a-zA-Z0-9]\w*/,
 });
 
 // Keywords
-
-// Action types
-
-const Kick = createToken({
-  name: Action.Kick,
-  pattern: new RegExp(Action.Kick),
-  longer_alt: PlainText,
-});
-
-const Ban = createToken({
-  name: Action.Ban,
-  pattern: new RegExp(Action.Ban),
-  longer_alt: PlainText,
-});
-
-const CreateRole = createToken({
-  name: Action.CreateRole,
-  pattern: new RegExp(Action.CreateRole),
-  longer_alt: PlainText,
-});
-
-const DestroyRole = createToken({
-  name: Action.DestroyRole,
-  pattern: new RegExp(Action.DestroyRole),
-  longer_alt: PlainText,
-});
-
-const ChangeRoleAssignment = createToken({
-  name: Action.ChangeRoleAssignment,
-  pattern: new RegExp(Action.ChangeRoleAssignment),
-  longer_alt: PlainText,
-});
-
-const GrantRole = createToken({
-  name: Action.GrantRole,
-  pattern: new RegExp(Action.GrantRole),
-  longer_alt: PlainText,
-});
-
-const RevokeRole = createToken({
-  name: Action.RevokeRole,
-  pattern: new RegExp(Action.RevokeRole),
-  longer_alt: PlainText,
-});
-
-const ChangeRolePermissions = createToken({
-  name: Action.ChangeRolePermissions,
-  pattern: new RegExp(Action.ChangeRolePermissions),
-  longer_alt: PlainText,
-});
-
-const AllowPermissions = createToken({
-  name: Action.AllowPermissions,
-  pattern: new RegExp(Action.AllowPermissions),
-  longer_alt: PlainText,
-});
-
-const ProhibitPermissions = createToken({
-  name: Action.DenyPermissions,
-  pattern: new RegExp(Action.DenyPermissions),
-  longer_alt: PlainText,
-});
-
-const AddPermissionOverrideOn = createToken({
-  name: Action.AddPermissionOverrideOn,
-  pattern: new RegExp(Action.AddPermissionOverrideOn),
-  longer_alt: PlainText,
-});
-
-const ChangePermissionOverrideOn = createToken({
-  name: Action.ChangePermissionOverrideOn,
-  pattern: new RegExp(Action.ChangePermissionOverrideOn),
-  longer_alt: PlainText,
-});
-
-const RemovePermissionOverrideOn = createToken({
-  name: Action.RemovePermissionOverrideOn,
-  pattern: new RegExp(Action.RemovePermissionOverrideOn),
-  longer_alt: PlainText,
-});
-
-const ChangeRoleSetting = createToken({
-  name: Action.ChangeRoleSetting,
-  pattern: new RegExp(Action.ChangeRoleSetting),
-  longer_alt: PlainText,
-});
-
-const DestroyChannel = createToken({
-  name: Action.DestroyChannel,
-  pattern: new RegExp(Action.DestroyChannel),
-  longer_alt: PlainText,
-});
-
-const ChangeServerSetting = createToken({
-  name: Action.ChangeServerSetting,
-  pattern: new RegExp(Action.ChangeServerSetting),
-  longer_alt: PlainText,
-});
-
-const ChangeChannelSetting = createToken({
-  name: Action.ChangeChannelSetting,
-  pattern: new RegExp(Action.ChangeChannelSetting),
-  longer_alt: PlainText,
-});
-const CreateChannel = createToken({
-  name: Action.CreateChannel,
-  pattern: new RegExp(Action.CreateChannel),
-  longer_alt: PlainText,
-});
-const MoveChannel = createToken({
-  name: Action.MoveChannel,
-  pattern: new RegExp(Action.MoveChannel),
-  longer_alt: PlainText,
-});
-const MoveRole = createToken({
-  name: Action.MoveRole,
-  pattern: new RegExp(Action.MoveRole),
-  longer_alt: PlainText,
-});
-const SetCategory = createToken({
-  name: Action.SetCategory,
-  pattern: new RegExp(Action.SetCategory),
-  longer_alt: PlainText,
-});
-const SyncToCategory = createToken({
-  name: Action.SyncToCategory,
-  pattern: new RegExp(Action.SyncToCategory),
-  longer_alt: PlainText,
-});
 
 // Permissions
 
@@ -393,28 +265,7 @@ const WhiteSpace = createToken({
 const allTokens = [
   WhiteSpace,
   // Keywords
-  Kick,
-  Ban,
-  CreateRole,
-  DestroyRole,
-  ChangeRoleAssignment,
-  GrantRole,
-  RevokeRole,
-  MoveChannel,
-  MoveRole,
-  AllowPermissions,
-  ProhibitPermissions,
-  AddPermissionOverrideOn,
-  ChangePermissionOverrideOn,
-  RemovePermissionOverrideOn,
-  ChangeRoleSetting,
-  DestroyChannel,
-  CreateChannel,
-  ChangeServerSetting,
-  ChangeChannelSetting,
-  ChangeRolePermissions,
-  SetCategory,
-  SyncToCategory,
+  ...actionTokens,
   Administrator,
   CreateInvite,
   ManageChannels,

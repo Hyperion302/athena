@@ -9,6 +9,7 @@ import {
   MIN_CHANNEL_LENGTH,
 } from '.';
 import { Guild } from 'discord.js';
+import { validators } from './actions';
 
 export interface ReferenceValidationResult {
   valid: boolean;
@@ -36,7 +37,7 @@ export interface ProposalValidationResult {
   invalidActions: number[];
 }
 
-async function validateUserReference(
+export async function validateUserReference(
   server: Guild,
   ref: ResourceReference
 ): Promise<ReferenceValidationResult> {
@@ -57,7 +58,7 @@ async function validateUserReference(
   return { valid: false, error: ReferenceValidationError.InvalidReferenceType };
 }
 
-async function validateRoleReference(
+export async function validateRoleReference(
   server: Guild,
   ref: ResourceReference
 ): Promise<ReferenceValidationResult> {
@@ -77,7 +78,7 @@ async function validateRoleReference(
   return { valid: false, error: ReferenceValidationError.InvalidReferenceType };
 }
 
-function validateChannelReference(
+export function validateChannelReference(
   server: Guild,
   ref: ResourceReference
 ): ReferenceValidationResult {
@@ -99,7 +100,7 @@ function validateChannelReference(
   return { valid: false, error: ReferenceValidationError.InvalidReferenceType };
 }
 
-async function validateUserOrRoleReference(
+export async function validateUserOrRoleReference(
   server: Guild,
   ref: ResourceReference
 ): Promise<ReferenceValidationResult> {
@@ -145,7 +146,7 @@ async function validateUserOrRoleReference(
   return { valid: false, error: ReferenceValidationError.InvalidReferenceType };
 }
 
-async function validateCategoryReference(
+export async function validateCategoryReference(
   server: Guild,
   ref: ResourceReference
 ): Promise<ReferenceValidationResult> {
@@ -185,148 +186,19 @@ async function validateCategoryReference(
 
 // Validates a single action
 // NOTE: Ignores output reference validation
-// This isn't best practice
 export async function validateAction(
   server: Guild,
   action: tAction
 ): Promise<ActionValidationResult> {
-  if (action.action == Action.Kick || action.action == Action.Ban) {
-    const userValidation = await validateUserReference(server, action.user);
+  const validator = validators[action.action];
+  if (!validator) {
     return {
-      valid: userValidation.valid,
-      referenceValidations: [userValidation],
-    };
-  }
-  if (action.action == Action.CreateRole) {
-    return { valid: true, referenceValidations: [] };
-  }
-  if (action.action == Action.DestroyRole) {
-    const roleValidation = await validateRoleReference(server, action.role);
-    return {
-      valid: roleValidation.valid,
-      referenceValidations: [roleValidation],
-    };
-  }
-  if (action.action == Action.ChangeRoleAssignment) {
-    const roleValidation = await validateRoleReference(server, action.role);
-    const grantValidation = await Promise.all(
-      action.grant.map((grant) => validateUserReference(server, grant))
-    );
-    const revokeValidation = await Promise.all(
-      action.revoke.map((grant) => validateUserReference(server, grant))
-    );
-    const validations = [
-      roleValidation,
-      ...grantValidation,
-      ...revokeValidation,
-    ];
-    return {
-      valid: validations.every((validation) => validation.valid),
-      referenceValidations: validations,
-    };
-  }
-  // The permissions have already been validated in previous steps
-  if (action.action == Action.ChangeRolePermissions) {
-    const roleValidation = await validateRoleReference(server, action.role);
-    return {
-      valid: roleValidation.valid,
-      referenceValidations: [roleValidation],
-    };
-  }
-  if (
-    action.action == Action.AddPermissionOverrideOn ||
-    action.action == Action.ChangePermissionOverrideOn ||
-    action.action == Action.RemovePermissionOverrideOn
-  ) {
-    const channelValidation = validateChannelReference(server, action.channel);
-    const subjectValidation = await validateUserOrRoleReference(
-      server,
-      action.subject
-    );
-    return {
-      valid: channelValidation.valid && subjectValidation.valid,
-      referenceValidations: [channelValidation, subjectValidation],
-    };
-  }
-  if (action.action == Action.ChangeRoleSetting) {
-    const roleValidation = await validateRoleReference(server, action.role);
-    return {
-      valid: roleValidation.valid,
-      referenceValidations: [roleValidation],
-    };
-  }
-  if (action.action == Action.MoveRole) {
-    const roleValidation = await validateRoleReference(server, action.role);
-    const subjectValidation = await validateRoleReference(
-      server,
-      action.subject
-    );
-    return {
-      valid: roleValidation.valid && subjectValidation.valid,
-      referenceValidations: [roleValidation, subjectValidation],
-    };
-  }
-  if (action.action == Action.MoveChannel) {
-    const channelValidation = validateChannelReference(server, action.channel);
-    const subjectValidation = validateChannelReference(server, action.channel);
-    return {
-      valid: channelValidation.valid && subjectValidation.valid,
-      referenceValidations: [channelValidation, subjectValidation],
-    };
-  }
-  if (action.action == Action.CreateChannel) {
-    return {
-      valid: true,
+      valid: false,
       referenceValidations: [],
+      error: ActionValidationError.InvalidActionType,
     };
   }
-  if (action.action == Action.DestroyChannel) {
-    const channelValidation = validateChannelReference(server, action.channel);
-    return {
-      valid: channelValidation.valid,
-      referenceValidations: [channelValidation],
-    };
-  }
-  if (action.action == Action.ChangeServerSetting) {
-    if (action.setting == ServerSetting.AFKChannel) {
-      const channelValidation = validateChannelReference(server, action.value);
-      return {
-        valid: channelValidation.valid,
-        referenceValidations: [channelValidation],
-      };
-    }
-    return { valid: true, referenceValidations: [] };
-  }
-  if (action.action == Action.ChangeChannelSetting) {
-    const channelValidation = validateChannelReference(server, action.channel);
-    return {
-      valid: channelValidation.valid,
-      referenceValidations: [channelValidation],
-    };
-  }
-  if (action.action == Action.SetCategory) {
-    const channelValidation = validateChannelReference(server, action.channel);
-    const categoryValidation = await validateCategoryReference(
-      server,
-      action.category
-    );
-    return {
-      valid: channelValidation.valid && categoryValidation.valid,
-      referenceValidations: [channelValidation && categoryValidation],
-    };
-  }
-  if (action.action == Action.SyncToCategory) {
-    const channelValidation = validateChannelReference(server, action.channel);
-    return {
-      valid: channelValidation.valid,
-      referenceValidations: [channelValidation],
-    };
-  }
-  return {
-    valid: false,
-    referenceValidations: [],
-    error: ActionValidationError.InvalidActionType,
-  };
+  return await validator(server, action);
 }
 
 // Runs individual validation on all actions and additionally validates
