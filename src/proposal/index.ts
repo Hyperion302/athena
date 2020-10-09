@@ -49,6 +49,7 @@ export {
   setProposalDescription,
   setProposalDuration,
   setExpirationDate,
+  setProposalName,
   getProposalByMessage,
   getHangingProposals,
 } from './db';

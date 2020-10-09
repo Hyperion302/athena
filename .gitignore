@@ -4,3 +4,4 @@ configuration.json
 credentials.json
 dist/
 .env
+.DS_Store

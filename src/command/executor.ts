@@ -25,6 +25,7 @@ import {
   clearVote,
   handleProposalExpire,
   setProposalDescription,
+  setProposalName,
 } from '../proposal';
 import {
   Command,
@@ -33,6 +34,9 @@ import {
   proposalsHelp,
   votingHelp,
   actionsHelp,
+  MAX_PROPOSAL_DESCRIPTION_LENGTH,
+  MAX_DURATION,
+  MAX_PROPOSAL_NAME_LENGTH,
 } from '.';
 import { Message } from 'discord.js';
 import {
@@ -128,9 +132,13 @@ export async function executeCommand(
     }
     if (command.field == 'description') {
       const description = command.value as string;
-      if (description.length > 1024) return;
       proposal.description = description;
       await setProposalDescription(proposal.id, description);
+    }
+    if (command.field == 'name') {
+      const name = command.value as string;
+      proposal.name = name;
+      await setProposalName(proposal.id, name);
     }
     if (command.field == 'duration') {
       const duration = command.value as number;

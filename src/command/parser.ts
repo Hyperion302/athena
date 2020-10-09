@@ -5,6 +5,8 @@ import {
   MAX_PROPOSAL_DESCRIPTION_LENGTH,
   MAX_DURATION,
   MIN_DURATION,
+  MIN_PROPOSAL_NAME_LENGTH,
+  MAX_PROPOSAL_NAME_LENGTH,
 } from '.';
 import { parseDuration, parseAction } from '../action';
 import { CommandSyntaxError } from '../errors/CommandSyntaxError';
@@ -57,7 +59,7 @@ export function parseCommand(command: string, channel: string): tCommand {
       .trim()
       .split(' ');
     let value: string | number;
-    let field: 'description' | 'duration';
+    let field: 'description' | 'duration' | 'name';
     if (params[1] == 'description') {
       value = params.slice(2).join(' ');
       if (
@@ -80,6 +82,17 @@ export function parseCommand(command: string, channel: string): tCommand {
         );
       }
       field = 'duration';
+    } else if (params[1] == 'name') {
+      value = params.slice(2).join(' ');
+      if (
+        value.length < MIN_PROPOSAL_NAME_LENGTH ||
+        value.length > MAX_PROPOSAL_NAME_LENGTH
+      ) {
+        throw new CommandSyntaxError(
+          `Proposal description too long or too short (${MIN_PROPOSAL_NAME_LENGTH}-${MAX_PROPOSAL_NAME_LENGTH})`
+        );
+      }
+      field = 'name';
     } else {
       throw new CommandSyntaxError(`Unrecognized field ${params[1]}`);
     }

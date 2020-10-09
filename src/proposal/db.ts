@@ -78,6 +78,19 @@ export async function setProposalDescription(id: string, description: string) {
   });
 }
 
+export async function setProposalName(id: string, name: string) {
+  await knex
+    .table('proposal')
+    .update({
+      name,
+    })
+    .where('id', id);
+  logger.info(`Set proposal ${id} name to ${name}`, {
+    proposal: id,
+    name,
+  });
+}
+
 export async function setProposalDuration(id: string, duration: number) {
   await knex
     .table('proposal')

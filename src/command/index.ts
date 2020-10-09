@@ -45,7 +45,7 @@ interface DestroyProposalCommand {
 interface UpdateProposalCommand {
   command: Command.UpdateProposal;
   id: string;
-  field: 'description' | 'duration';
+  field: 'description' | 'duration' | 'name';
   value: string | number;
 }
 

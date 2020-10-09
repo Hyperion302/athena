@@ -233,8 +233,6 @@ Add voice moderation actions (mute, deafen, move)
 
 Add the ability to update titles
 
-Better voting: If you vote the opposite way it switches your vote for you
-
 Nonexistent resource errors should tell you what resource doesn't exist
 
 Quorums: Custom quorums and vote ratio requirements beyond a simple majority no-quorum requirement
