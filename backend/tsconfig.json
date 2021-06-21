@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "files": ["src/router-shim.d.ts"],
+  "compilerOptions": {
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "references": [{ "path" : "../common" }],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules/**/*"]
+}

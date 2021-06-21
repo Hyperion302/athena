@@ -1,0 +1,39 @@
+{
+  "extends": "../tsconfig.json",
+  "references": [
+    { "path" : "../common" }
+  ],
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "ES2015",
+    "jsx": "preserve",
+    "importHelpers": true,
+    "experimentalDecorators": true,
+    "baseUrl": ".",
+    "types": [
+      "webpack-env",
+      "node"
+    ],
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
