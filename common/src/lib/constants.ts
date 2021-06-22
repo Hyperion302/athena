@@ -1,8 +1,8 @@
 // Proposal
 export const PROPOSAL_NAME_MIN = 1;
-export const PROPOSAL_NAME_MAX = 50;
+export const PROPOSAL_NAME_MAX = 256;
 export const PROPOSAL_DESCRIPTION_MIN = 0;
-export const PROPOSAL_DESCRIPTION_MAX = 2000;
+export const PROPOSAL_DESCRIPTION_MAX = 1024;
 // Server
 export const SERVER_NAME_MAX = 100;
 export const SERVER_NAME_MIN = 2;
