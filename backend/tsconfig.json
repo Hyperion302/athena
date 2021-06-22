@@ -1,11 +1,13 @@
 {
   "extends": "../tsconfig.json",
-  "files": ["src/router-shim.d.ts"],
   "compilerOptions": {
+    "target": "ESNext",
     "outDir": "dist",
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "paths": {
-      "@/*": ["src/*"]
+        "@/*": [
+            "./*"
+        ]
     }
   },
   "references": [{ "path" : "../common" }],
