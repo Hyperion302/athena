@@ -14,7 +14,7 @@ import {
   NewProposalRequest,
 } from "athena-common";
 import { client } from "@/client";
-import {createAction, validateAction} from "@/action";
+import {createAction, validateAction, validateActions} from "@/action";
 
 // GET /server/:server/proposal/
 async function rootGetHandler (req: Request, res: Response, next: NextFunction): Promise<void> { 
@@ -78,10 +78,9 @@ async function rootPostHandler (req: Request, res: Response, next: NextFunction)
     actions === undefined
     || !Array.isArray(actions)
   ) return next({ status: 400, message: "Missing actions list"});
-  const actionValidationPromises = actions.map(a => validateAction(server, a));
-  const actionValidationResults = await Promise.all(actionValidationPromises);
-  const actionsValid = actionValidationResults.every(r => r.valid);
-  if (!actionsValid) return next({ status: 400, message: "An action is invalid" });
+  const validationResult = await validateActions(server, actions);
+  console.debug(validationResult);
+  if (!validationResult.valid) return next({ status: 400, message: "An action is invalid" });
 
   // Create proposal
   const createdProposal = await createProposal(
