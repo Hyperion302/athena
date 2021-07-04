@@ -17,13 +17,24 @@ Retrieve a refresh token
 Expects up to 200 servers in a query field named `servers`.  Returns the IDs of
 the servers in the list that are running Athena.
 
-### GET /server/:server/recent?c=:count
+## Proposals
+
+### GET /server/:server/proposal?s=:start&c=:count
+
+Retrieve all proposals for a server.  Page starts with ID :start and has *up to* :count
+proposals. :count must be (0, 1000].
+
+### POST /server/:server/proposal
+
+Create a new proposal
+
+### GET /server/:server/proposal/recent?c=:count
 
 Retrieve :count recent proposals
 
 :count must be greater than 0 and less than 50
 
-### GET /server/:server/endingSoon?w=:within&c=:count
+### GET /server/:server/proposal/endingSoon?w=:within&c=:count
 
 Retrieve :count proposals ending within :within seconds
 
@@ -31,57 +42,41 @@ Retrieve :count proposals ending within :within seconds
 
 :count must be greater than 0 and less than 50
 
-### GET /server/:server/proposals?p=:page
+### DELETE /server/:server/proposal/:proposal
 
-Retrieve all of a servers proposals, ordered by creation date, paginated on :page
-
-## Proposals
-
-### POST /server/:server/proposals
-
-Create a new proposal
-
-### PATCH /server/:server/proposals/:proposal
-
-Update :proposal
-
-Caller must be :proposal's author AND :proposal must not have already been started
-
-NOTE: This call is extremely unlikely to ever be used, since proposals are immediately started after creation with the new web UI
-
-### DELETE /server/:server/proposals/:proposal
+NOT IMPLEMENTED
 
 Delete :proposal
 
 Caller must be :proposal's author AND :proposal must not have already been executed
 
-### GET /server/:server/proposals/:proposal
+### GET /server/:server/proposal/:proposal
 
 Get :proposal
 
 Caller must be a member of :server
 
-### GET /server/:server/proposals/:proposal/votes
+### GET /server/:server/proposal/:proposal/votes
 
 Get all votes for :proposal
 
 Caller must be a member of :server
 
-### GET /server/:server/proposals/:proposal/myVote
+### GET /server/:server/proposal/:proposal/vote
 
 Get callers vote for :proposal, null if not voted
 
 Caller must be a member of :server
 
-### POST /server/:server/proposals/:proposal/vote
+### POST /server/:server/proposal/:proposal/vote
 
-Vote for :propsoal
+Vote for :proposal
 
 Returns the new vote tally
 
 Caller must a member of :server
 
-### GET /server/:server/proposals/:proposal/actions
+### GET /server/:server/proposal/:proposal/actions
 
 Get and resolve all actions of :proposal
 
@@ -91,26 +86,26 @@ Caller must be a member of :server
 
 The calling user must be a member of :server
 
-### GET /proxy/:server/member/:member
+### GET /server/:server/proxy/member/:member
 
 Returns a single user object
 
-### GET /proxy/:server/member
+### GET /server/:server/proxy/member?q=:query&c=:count
 
-Returns a list of IDs and Nicknames
+Returns up to :count IDs and Nicknames that match a query :query.
 
-### GET /proxy/:server/role/:role
+### GET /server/:server/proxy/role/:role
 
 Returns a single role object
 
-### GET /proxy/:server/role
+### GET /server/:server/proxy/role
 
 Returns a list of IDs and role names 
 
-### GET /proxy/:server/channel/:channel
+### GET /server/:server/proxy/channel/:channel
 
 Returns a single channel object
 
-### GET /proxy/:server/channel
+### GET /server/:server/proxy/channel
 
 Returns a list of IDs and channel names for each channel category

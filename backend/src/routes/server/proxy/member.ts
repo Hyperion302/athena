@@ -1,15 +1,32 @@
+import express from "express"
 import { Request, Response } from "express";
-import { User } from "athena-common";
-import { client } from "../../../client";
-import "../../../express-shim";
+import {User} from "athena-common";
+import { client } from "@/client";
 
-export default async function (req: Request, res: Response) { 
+async function memberHandler (req: Request, res: Response) {
   const serverID = req.params.server;
   const server = await client.guilds.fetch(serverID);
 
-  const limit = parseInt(req.query.limit?.toString()) || 1;
+  const member = await server.members.fetch(req.params.member);
+  if (!member) throw { status: 404, error: 'Member not found' };
+
+  const user: User = {
+    id: member.id,
+    username: member.user.username,
+    discriminator: member.user.discriminator,
+    avatar: member.user.avatar
+  }
+
+  res.status(200).json(user);
+}
+
+async function rootHandler (req: Request, res: Response) { 
+  const serverID = req.params.server;
+  const server = await client.guilds.fetch(serverID);
+
+  const limit = parseInt(req.query.l?.toString()) || 1;
   if (!limit || limit < 0 || limit > 1000) throw { status: 400, error: 'Invalid limit' };
-  const query = req.query.query?.toString() || "";
+  const query = req.query.q?.toString() || "";
   if (!query) throw { status: 400, error: 'Invalid query' };
  
   // All members
@@ -39,3 +56,11 @@ export default async function (req: Request, res: Response) {
   if (endpoint > members.length) endpoint = members.length;
   res.status(200).json(members.slice(startPoint + 1, endpoint));*/
 }
+
+const router = express.Router({ mergeParams: true });
+
+router.get("/", rootHandler);
+router.get("/:member", memberHandler);
+
+export default router;
+

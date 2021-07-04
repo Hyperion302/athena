@@ -1,7 +1,7 @@
 import express from "express";
-import logger from "../logging";
+import logger from "@/logging";
 import { Request, Response, NextFunction } from "express";
-import "../express-shim";
+import "@/express-shim";
 import axios from "axios";
 const router = express.Router();
 
@@ -22,17 +22,13 @@ router.use(function (req, res, next) {
   })
   .then((response) => {
     const data = response.data;
-    req.user = data.user.id;
+    res.locals.user = data.user;
     next();
   })
   .catch(() => {
     next({ status: 401, message: "Invalid Authorization" });
   });
 });
-
-// Proxy
-import proxyHandler from "./proxy";
-router.use("/proxy", proxyHandler);
 
 // Server
 import serverHandler from "./server";

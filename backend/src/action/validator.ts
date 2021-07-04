@@ -1,15 +1,12 @@
 import {
-  ReferenceType,
   ResourceReference,
-  Action,
+  ReferenceType,
   tAction,
-  ServerSetting,
+  Action,
   ChannelType,
-  MAX_CHANNEL_LENGTH,
-  MIN_CHANNEL_LENGTH,
-} from '.';
+} from "athena-common";
 import { Guild } from 'discord.js';
-import { validators } from './actions';
+import { validators } from '@/action/actions';
 
 export interface ReferenceValidationResult {
   valid: boolean;
@@ -41,15 +38,6 @@ export async function validateUserReference(
   server: Guild,
   ref: ResourceReference
 ): Promise<ReferenceValidationResult> {
-  if (ref.type == ReferenceType.Username) {
-    const user = server.members.cache.find(
-      (member) =>
-        member.user.username == ref.username &&
-        member.user.discriminator == ref.discriminator.toString()
-    );
-    if (user) return { valid: true };
-    return { valid: false, error: ReferenceValidationError.NullReference };
-  }
   if (ref.type == ReferenceType.ID) {
     const user = await server.members.fetch(ref.id);
     if (user) return { valid: true };
@@ -62,11 +50,6 @@ export async function validateRoleReference(
   server: Guild,
   ref: ResourceReference
 ): Promise<ReferenceValidationResult> {
-  if (ref.type == ReferenceType.FullName) {
-    const role = server.roles.cache.find((role) => role.name == ref.name);
-    if (role) return { valid: true };
-    return { valid: false, error: ReferenceValidationError.NullReference };
-  }
   if (ref.type == ReferenceType.ID) {
     const role = await server.roles.fetch(ref.id);
     if (role) return { valid: true };
@@ -82,13 +65,6 @@ export function validateChannelReference(
   server: Guild,
   ref: ResourceReference
 ): ReferenceValidationResult {
-  if (ref.type == ReferenceType.FullName) {
-    const channel = server.channels.cache.find(
-      (channel) => channel.name == ref.name
-    );
-    if (channel) return { valid: true };
-    return { valid: false, error: ReferenceValidationError.NullReference };
-  }
   if (ref.type == ReferenceType.ID) {
     const channel = server.channels.resolve(ref.id);
     if (channel) return { valid: true };
@@ -104,15 +80,6 @@ export async function validateUserOrRoleReference(
   server: Guild,
   ref: ResourceReference
 ): Promise<ReferenceValidationResult> {
-  if (ref.type == ReferenceType.Username) {
-    const user = server.members.cache.find(
-      (member) =>
-        member.user.username == ref.username &&
-        member.user.discriminator == ref.discriminator.toString()
-    );
-    if (user) return { valid: true };
-    return { valid: false, error: ReferenceValidationError.NullReference };
-  }
   if (ref.type == ReferenceType.ID) {
     try {
       const user = await server.members.fetch(ref.id);
@@ -135,11 +102,6 @@ export async function validateUserOrRoleReference(
       }
     }
   }
-  if (ref.type == ReferenceType.FullName) {
-    const role = server.roles.cache.find((role) => role.name == ref.name);
-    if (role) return { valid: true };
-    return { valid: false, error: ReferenceValidationError.NullReference };
-  }
   if (ref.type == ReferenceType.Pointer) {
     return { valid: true };
   }
@@ -152,21 +114,6 @@ export async function validateCategoryReference(
 ): Promise<ReferenceValidationResult> {
   if (ref.type == ReferenceType.ID) {
     const channel = server.channels.cache.get(ref.id);
-    if (!channel) {
-      return { valid: false, error: ReferenceValidationError.NullReference };
-    }
-    if (channel.type != 'category') {
-      return {
-        valid: false,
-        error: ReferenceValidationError.InvalidReferenceType,
-      };
-    }
-    return { valid: true };
-  }
-  if (ref.type == ReferenceType.FullName) {
-    const channel = server.channels.cache.find(
-      (channel) => channel.name == ref.name
-    );
     if (!channel) {
       return { valid: false, error: ReferenceValidationError.NullReference };
     }
@@ -249,7 +196,6 @@ export async function validateActions(
         }
         break;
       // Actions with both a channel and a subject
-      case Action.AddPermissionOverrideOn:
       case Action.ChangePermissionOverrideOn:
         if (action.channel.type == ReferenceType.Pointer) {
           if (action.channel.index >= actions.length) {

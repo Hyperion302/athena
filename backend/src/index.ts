@@ -1,35 +1,20 @@
-import { parseCommand, executeCommand, tCommand } from "./command";
-import { connectToDevDB, connectToProdDB, runLatestMigration } from "./db";
-import { connectToDiscord, client } from "./client";
-import {
-  getProposalByMessage,
-  ProposalStatus,
-  deleteProposal,
-  setProposalStatus,
-  generateProposalEmbed,
-  setProposalMessage,
-  getHangingProposals,
-  scheduleProposal,
-  addVote,
-  Vote,
-  Proposal,
-  countVotes,
-  refreshProposalMessage,
-  gIntervalList,
-} from "./proposal";
-import { Message, PartialMessage } from "discord.js";
-import { getActions } from "./action";
-import logger from "./logging";
-import { InternalError } from "./errors/InternalError";
-import app from "./app";
+import { connectToDevDB, connectToProdDB, runLatestMigration } from "@/db";
+import { connectToDiscord, client } from "@/client";
+import { getHangingProposals, scheduleProposal } from "@/proposal";
+import { tCommand, parseCommand, executeCommand } from "@/command";
+import logger from "@/logging";
+import { InternalError } from "@/errors/InternalError";
+import app from "@/app";
 
 const production = process.env.NODE_ENV === "production";
 
 // Startup procedure
 async function start() {
+  // Find bot token
   const botToken = process.env.BOT_TOKEN;
   if (!botToken) throw new InternalError("Invalid Bot Token");
 
+  // Connect to DB
   if (production) {
     const SQLUser = process.env.SQL_USER;
     if (!SQLUser) throw new InternalError("Invalid SQL User");
@@ -142,7 +127,7 @@ client.on("message", async (message) => {
     }
   }
 });
-
+/*
 // NOTE: I ignore non-utf8 emoji (custom server emoji)
 client.on("messageReactionAdd", async (reaction, user) => {
   if (!client.user) { return; }
@@ -226,5 +211,5 @@ client.on("messageDelete", onSingleDelete);
 client.on("messageDeleteBulk", async (messages) => {
   return Promise.all(Array.from(messages.values()).map(onSingleDelete));
 });
-
+*/
 start();

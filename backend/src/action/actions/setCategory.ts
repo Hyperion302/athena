@@ -1,44 +1,13 @@
-import { createToken, IToken } from 'chevrotain';
 import { CategoryChannel, Guild } from 'discord.js';
-import { ExecutionError } from '../../errors';
-import { Action, ResourceReference } from '..';
-import { resolveChannelReference, ResourceList } from '../executor';
-import { PlainText } from '../lexer';
-import { parseChannelToken } from '../parser';
+import { SetCategoryAction } from "athena-common";
+import { ExecutionError } from '@/errors';
+import { resolveChannelReference, ResourceList } from '@/action/executor';
 import {
   ActionValidationResult,
   validateCategoryReference,
   validateChannelReference,
-} from '../validator';
+} from '@/action/validator';
 
-export interface SetCategoryAction {
-  action: Action.SetCategory;
-  channel: ResourceReference;
-  category: ResourceReference;
-}
-export const setCategoryToken = createToken({
-  name: Action.SetCategory,
-  pattern: new RegExp(Action.SetCategory),
-  longer_alt: PlainText,
-});
-export function parseSetCategoryAction(tokens: IToken[]): SetCategoryAction {
-  const channelRef = parseChannelToken(tokens[1]);
-  const parentToken = tokens[2];
-  if (parentToken.image == 'none') {
-    // Unset parent
-    return {
-      action: Action.SetCategory,
-      channel: channelRef,
-      category: null,
-    };
-  }
-  const parentRef = parseChannelToken(parentToken);
-  return {
-    action: Action.SetCategory,
-    channel: channelRef,
-    category: parentRef,
-  };
-}
 export async function validateSetCategoryAction(
   guild: Guild,
   action: SetCategoryAction

@@ -12,6 +12,9 @@ app.use(cors({
     else if (origin === "http://athena.local:8080") {
       cb(null, true);
     }
+    else if (origin === undefined) {
+      cb(null, true);
+    }
     else {
       cb(new Error("CORS failure"));
     }

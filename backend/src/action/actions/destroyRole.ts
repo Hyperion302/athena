@@ -1,27 +1,8 @@
-import { createToken, IToken } from 'chevrotain';
 import { Guild } from 'discord.js';
-import { tAction } from '.';
-import { Action, ReferenceType, ResourceReference } from '..';
-import { ResourceList, resolveRoleReference } from '../executor';
-import { PlainText } from '../lexer';
-import { parseRoleToken } from '../parser';
-import { ActionValidationResult, validateRoleReference } from '../validator';
+import { DestroyRoleAction, ReferenceType } from "athena-common";
+import { ResourceList, resolveRoleReference } from '@/action/executor';
+import { ActionValidationResult, validateRoleReference } from '@/action/validator';
 
-export interface DestroyRoleAction {
-  action: Action.DestroyRole;
-  role: ResourceReference;
-}
-export const destroyRoleToken = createToken({
-  name: Action.DestroyRole,
-  pattern: new RegExp(Action.DestroyRole),
-  longer_alt: PlainText,
-});
-export function parseDestroyRoleAction(tokens: IToken[]): DestroyRoleAction {
-  return {
-    action: Action.DestroyRole,
-    role: parseRoleToken(tokens[1]),
-  };
-}
 export async function validateDestroyRoleAction(
   guild: Guild,
   action: DestroyRoleAction

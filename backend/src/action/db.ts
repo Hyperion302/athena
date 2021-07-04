@@ -1,9 +1,9 @@
 // Gets a single action
 
-import { tAction, parseAction } from '.';
-import { knex } from '../db';
-import { ResourceNotFoundError } from '../errors/ResourceNotFoundError';
-import logger from '../logging';
+import { knex } from '@/db';
+import { ResourceNotFoundError } from "@/errors";
+import { tAction } from "athena-common";
+import logger from '@/logging';
 
 // NOTE: Does NOT validate the action once retrieved
 export async function getAction(
@@ -18,7 +18,8 @@ export async function getAction(
   if (queryResults.length < 1) {
     throw new ResourceNotFoundError('action', index.toString());
   }
-  return parseAction(queryResults[0].action_string);
+  logger.info(queryResults[0].action_data);
+  return queryResults[0].action_data;
 }
 
 // Gets all actions on a proposal
@@ -30,7 +31,7 @@ export async function getActions(proposal: string): Promise<tAction[]> {
     .where('proposal_id', proposal);
   const actionList: tAction[] = [];
   queryResults.forEach((actionRow) => {
-    actionList[actionRow.id] = parseAction(actionRow.action_string);
+    actionList[actionRow.id] = actionRow.action_data;
   });
   return actionList;
 }
@@ -56,19 +57,19 @@ export async function getNextIndex(proposal: string) {
 export async function createAction(
   proposal: string,
   index: number,
-  actionString: string
+  action: tAction
 ): Promise<number> {
   await knex
     .insert({
       id: index,
       proposal_id: proposal,
-      action_string: actionString,
+      action_data: action,
     })
     .into('action');
-  logger.info(`Created action ${index} on ${proposal}: ${actionString}`, {
+  logger.info(`Created action ${index} on ${proposal}`, {
     proposal,
     index,
-    actionString,
+    action,
   });
   return index;
 }

@@ -1,12 +1,12 @@
 // The client doesn't need to be logged in
 
 import { Client } from 'discord.js';
-import { Proposal, ProposalStatus } from '.';
-import { getProposal, setProposalStatus } from './db';
-import { countVotes, Vote } from './vote';
-import { getActions, executeActions, validateActions } from '../action';
-import { generateProposalEmbed, refreshProposalMessage } from './renderer';
-import logger from '../logging';
+import { Proposal, ProposalStatus } from 'athena-common';
+import { getProposal, setProposalStatus } from '@/proposal/db';
+import { countVotes, Vote } from '@/proposal/vote';
+import { getActions, executeActions, validateActions } from '@/action';
+
+import logger from '@/logging';
 
 export const gIntervalList: {
   [key: string]: NodeJS.Timeout;
@@ -27,7 +27,7 @@ export function scheduleProposal(
   );
   gIntervalList[proposal.id] = interval;
   logger.info(
-    `Scheduled proposal ${proposal} to execute in ${timeout} milliseconds`,
+    `Scheduled proposal ${proposal.id} to execute in ${timeout} milliseconds`,
     { proposal: proposal.id, timeout }
   );
 }
@@ -74,7 +74,5 @@ export async function handleProposalExpire(
     );
     proposal.status = ProposalStatus.Failed;
   }
-  const newEmbed = await generateProposalEmbed(proposal, votes);
   await setProposalStatus(proposal.id, proposal.status);
-  await refreshProposalMessage(client, proposal, newEmbed);
 }

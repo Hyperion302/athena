@@ -1,6 +1,6 @@
-import logger from '../../logging';
-import { Vote } from '.';
-import { knex } from '../../db';
+import logger from '@/logging';
+import { Vote } from "athena-common";
+import { knex } from '@/db';
 
 export async function addVote(id: string, userID: string, vote: Vote) {
   // Silently fails if you've already voted
@@ -25,7 +25,7 @@ export async function addVote(id: string, userID: string, vote: Vote) {
         });
     } catch (e) {
       logger.warn(
-        `Unknown error occured (couldn't update vote or create vote) for ${userID}: `,
+        `Couldn't update vote or create vote for ${userID}: `,
         e
       );
       return;
@@ -44,6 +44,16 @@ export async function clearVote(id: string, userID: string) {
   } catch (e) {
     return;
   }
+}
+
+export async function myVote(id: string, userID: string): Promise<Vote | null> {
+  const query = await knex
+    .select("vote")
+    .from("vote")
+    .where("proposal_id", id)
+    .andWhere("user_id", userID);
+  if (query.length < 1) return null;
+  return query[0];
 }
 
 export async function countVotes(
