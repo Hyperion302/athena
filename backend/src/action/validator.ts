@@ -138,7 +138,7 @@ export async function validateAction(
   action: tAction
 ): Promise<ActionValidationResult> {
   const validator = validators[action.action];
-  if (!validator) {
+  if (validator === undefined) {
     return {
       valid: false,
       referenceValidations: [],
@@ -154,21 +154,23 @@ export async function validateActions(
   server: Guild,
   actions: tAction[]
 ): Promise<ProposalValidationResult> {
+  const invalidActionIndices: number[] = [];
+
   const actionValidations = await Promise.all(
     actions.map((action) => validateAction(server, action))
   );
-  const actionValidationSuccess = actionValidations.every(
-    (validation) => validation.valid
-  );
+  for (let i = 0; i < actionValidations.length; i++) {
+    if (!actionValidations[i].valid) invalidActionIndices.push(i);
+  }
+  const actionValidationSuccess = invalidActionIndices.length == 0;
   if (!actionValidationSuccess) {
     return {
       valid: false,
       actionValidations,
-      invalidActions: [],
+      invalidActions: invalidActionIndices,
     };
   }
-  const invalidActionIndices: number[] = [];
-  // Validate object references
+    // Validate object references
   actions.forEach((action: tAction, index: number) => {
     switch (action.action) {
       // Actions without output references
