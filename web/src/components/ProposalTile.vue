@@ -71,14 +71,14 @@ export default Vue.extend({
   methods: {
     async fetchVotes() {
       if (!this.proposal) { return; }
-      const votes = await getVotes(this.proposal.id, this.token);
+      const votes = await getVotes(this.proposal.server, this.proposal.id, this.token);
       this.yes = votes[Vote.Yes];
       this.no = votes[Vote.No];
       this.abstain = votes[Vote.Abstain];
     },
     async fetchMyVote() {
       if (!this.proposal) { return; }
-      this.myVote = await getMyVote(this.proposal.id, this.token);
+      this.myVote = await getMyVote(this.proposal.server, this.proposal.id, this.token);
     },
     async vote(v: Vote) {
       this.myVote = v; // temp

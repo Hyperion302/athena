@@ -14,7 +14,7 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
-import { permissions } from "@/util/permissions";
+import { permissions } from "athena-common";
 
 export default Vue.extend({
   props: ['value', 'multiple', 'label', 'rules'],

@@ -2,15 +2,13 @@ import { discord, drkt, tokenOpts } from "./api";
 import { Channel, ChannelType, Role, User } from "athena-common";
 
 // Channel
-
-
 export type getChannelsReturnObject = {
   [ChannelType.Text]: Channel[];
   [ChannelType.Voice]: Channel[];
   [ChannelType.Category]: Channel[];
 };
 export async function getChannels(token: string, server: string): Promise<getChannelsReturnObject> {
-  const response = await drkt.get(`proxy/${server}/channel`, tokenOpts(token));
+  const response = await drkt.get(`server/${server}/proxy/channel`, tokenOpts(token));
   return {
     [ChannelType.Text]: response.data.text.map((partialChannel: any) => ({
       id: partialChannel.id,
@@ -54,7 +52,7 @@ function parseRole(raw: any): Role {
   };
 }
 export async function getRoles(token: string, server: string): Promise<Role[]> {
-  const response = await drkt.get(`/proxy/${server}/role`, tokenOpts(token));
+  const response = await drkt.get(`/server/${server}/proxy/role`, tokenOpts(token));
   return response.data.map(parseRole);
 }
 
@@ -75,11 +73,11 @@ function parseUser(raw: any): User {
 }
 const LIMIT = 1000;
 export async function getMembers(token: string, server: string, query: string): Promise<User[]> {
-  const response = await drkt.get(`/proxy/${server}/member`, {
+  const response = await drkt.get(`/server/${server}/proxy/member`, {
     ...tokenOpts(token),
     params: {
-      limit: LIMIT,
-      query
+      l: LIMIT,
+      q: query
     }
   });
   return response.data;
@@ -112,7 +110,7 @@ export async function getMembers(token: string, server: string, query: string): 
 }
 
 export async function getMember(token: string, server: string, member: string): Promise<User> {
-  const response = await drkt.get(`/proxy/${server}/member/${member}`, tokenOpts(token));
+  const response = await drkt.get(`/server/${server}/proxy/member/${member}`, tokenOpts(token));
   return parseUser(response.data);
 }
 

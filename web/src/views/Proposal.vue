@@ -133,16 +133,8 @@ export default Vue.extend({
       if (this.proposal.status == ProposalStatus.Running) {
         return 100 * ((this.proposal.expiresOn - Date.now()) / this.proposal.duration);
       }
-      else if (this.proposal.status == ProposalStatus.Passed) {
-        return 100;
-        if(!(this.yes + this.no + this.abstain)) return 0;
-        return 100 * (this.yes / (this.yes + this.no + this.abstain));
-      }
-      else if (this.proposal.status == ProposalStatus.Failed) {
-        return 100;
-        if(!(this.yes + this.no + this.abstain)) return 0;
-        return 100 * (this.no / (this.yes + this.no + this.abstain));
-      }
+      else if (this.proposal.status == ProposalStatus.Passed) return 100;
+      else if (this.proposal.status == ProposalStatus.Failed) return 100;
       return 0;
     },
     statusString(): string {
@@ -167,13 +159,13 @@ export default Vue.extend({
       if (!this.proposal) { return; }
       if (this.proposal.status != ProposalStatus.Running) { return; }
       if (v === this.myVote) { v = null; }
-      await vote(v, this.proposalID, this.token);
+      await vote(v, this.serverID, this.proposalID, this.token);
       this.myVote = v;
-      // this.fetchVotes();
+      this.fetchVotes();
     },
     async fetchProposal() {
       if (!this.proposalID) { return; }
-      this.proposal = await getProposal(this.proposalID, this.token);
+      this.proposal = await getProposal(this.serverID, this.proposalID, this.token);
     },
     async fetchAuthor() {
       if (!this.serverID || !this.proposal) { return; }
@@ -185,16 +177,16 @@ export default Vue.extend({
     },
     async fetchVotes() {
       if (!this.proposalID) { return; }
-      const votes = await getVotes(this.proposalID, this.token);
+      const votes = await getVotes(this.serverID, this.proposalID, this.token);
       this.yes = votes[Vote.Yes];
       this.no = votes[Vote.No];
       this.abstain = votes[Vote.Abstain];
 
-      this.myVote = await getMyVote(this.proposalID, this.token);
+      this.myVote = await getMyVote(this.serverID, this.proposalID, this.token);
     },
     async fetchActions() {
       if (!this.proposalID) { return; }
-      this.actions = await getActions(this.proposalID, this.token);
+      this.actions = await getActions(this.serverID, this.proposalID, this.token);
     },
     durationFormat
   }

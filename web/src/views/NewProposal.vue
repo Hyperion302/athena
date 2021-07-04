@@ -858,6 +858,8 @@ export default Vue.extend({
           role: this.serializeRef(action.role)
         };
        case Action.ChangeRoleAssignment:
+        if (action.grant === undefined) action.grant = [];
+        if (action.revoke === undefined) action.revoke = [];
         return {
           action: Action.ChangeRoleAssignment,
           role: this.serializeRef(action.role),
@@ -865,6 +867,8 @@ export default Vue.extend({
           revoke: action.revoke.map(this.serializeRef)
         };
        case Action.ChangeRolePermissions:
+        if (action.allow === undefined) action.allow = [];
+        if (action.deny === undefined) action.deny = [];
         return {
           action: Action.ChangeRolePermissions,
           role: this.serializeRef(action.role),
@@ -872,6 +876,9 @@ export default Vue.extend({
           deny: this.reducePermissions(action.deny)
         }
        case Action.ChangePermissionOverrideOn:
+        if (action.allow === undefined) action.allow = [];
+        if (action.unset === undefined) action.unset = [];
+        if (action.deny === undefined) action.deny = [];
         return {
           action: Action.ChangePermissionOverrideOn,
           channel: this.serializeRef(action.channel),
@@ -899,7 +906,7 @@ export default Vue.extend({
           action: Action.MoveChannel,
           channel: this.serializeRef(action.channel),
           direction: action.direction,
-          subject: this.serailizeRef(action.subject)
+          subject: this.serializeRef(action.subject)
         }
        case Action.CreateChannel:
         return {
@@ -916,7 +923,7 @@ export default Vue.extend({
         let value;
         switch (action.setting) {
           case ServerSetting.AFKChannel:
-            value = this.serailizeRef(action.value);
+            value = this.serializeRef(action.value);
             break;
           case ServerSetting.AFKTimeout:
             switch (action.value) {
@@ -981,7 +988,10 @@ export default Vue.extend({
         actions
       };
 
-      createProposal(proposal);
+      createProposal(this.selectedServer, proposal, this.token)
+      .then(() => {
+        this.$router.push({ name: "Server", params: { server: this.selectedServer }});
+      });
     }
   },
   watch: {

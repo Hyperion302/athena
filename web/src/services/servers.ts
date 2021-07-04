@@ -1,13 +1,8 @@
-import { Server, User, Role, Channel } from "athena-common";
-import { discord, drkt } from "@/services/api";
-import axios from "axios";
+import { Server } from "athena-common";
+import { discord, drkt, tokenOpts } from "@/services/api";
 
 export async function getServers(token: string): Promise<Server[]> {
-  const results = await discord.get("users/@me/guilds", {
-    headers: {
-      authorization: `Bearer ${token}`,
-    },
-  });
+  const results = await discord.get("users/@me/guilds", tokenOpts(token));
   return results.data.map((raw: any) => ({
     id: raw.id,
     name: raw.name,
@@ -17,10 +12,8 @@ export async function getServers(token: string): Promise<Server[]> {
 
 export async function filterServers(token: string, servers: Server[]): Promise<Server[]> {
   const results = await drkt.get("server", {
-    headers: {
-      authorization: `Bearer ${token}`,
-    },
-    params: { 
+    ...tokenOpts(token),
+    params: {
       servers: servers.map((server) => server.id)
     }
   });
