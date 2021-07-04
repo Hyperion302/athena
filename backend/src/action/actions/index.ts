@@ -93,7 +93,7 @@ export const validators: {
   [Action.Kick]: validateKickAction,
   [Action.Ban]: validateBanAction,
   [Action.CreateRole]: validateCreateRoleAction,
-  [Action.DestroyChannel]: validateDestroyRoleAction,
+  [Action.DestroyRole]: validateDestroyRoleAction,
   [Action.ChangeRoleAssignment]: validateChangeRoleAssignmentAction,
   [Action.ChangeRolePermissions]: validateChangeRolePermissionsAction,
   [Action.ChangePermissionOverrideOn]: validateChangePermissionOverrideAction,
