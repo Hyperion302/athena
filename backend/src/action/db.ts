@@ -18,8 +18,7 @@ export async function getAction(
   if (queryResults.length < 1) {
     throw new ResourceNotFoundError('action', index.toString());
   }
-  logger.info(queryResults[0].action_data);
-  return queryResults[0].action_data;
+  return JSON.parse(queryResults[0].action_data);
 }
 
 // Gets all actions on a proposal
@@ -31,7 +30,7 @@ export async function getActions(proposal: string): Promise<tAction[]> {
     .where('proposal_id', proposal);
   const actionList: tAction[] = [];
   queryResults.forEach((actionRow) => {
-    actionList[actionRow.id] = actionRow.action_data;
+    actionList[actionRow.id] = JSON.parse(actionRow.action_data);
   });
   return actionList;
 }
@@ -63,7 +62,7 @@ export async function createAction(
     .insert({
       id: index,
       proposal_id: proposal,
-      action_data: action,
+      action_data: JSON.stringify(action),
     })
     .into('action');
   logger.info(`Created action ${index} on ${proposal}`, {
