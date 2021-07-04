@@ -1,14 +1,14 @@
 import express from "express"
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import {User} from "athena-common";
 import { client } from "@/client";
 
-async function memberHandler (req: Request, res: Response) {
+async function memberHandler (req: Request, res: Response, next: NextFunction) {
   const serverID = req.params.server;
   const server = await client.guilds.fetch(serverID);
 
   const member = await server.members.fetch(req.params.member);
-  if (!member) throw { status: 404, error: 'Member not found' };
+  if (!member) return next({ status: 404, error: 'Member not found' });
 
   const user: User = {
     id: member.id,
@@ -20,14 +20,14 @@ async function memberHandler (req: Request, res: Response) {
   res.status(200).json(user);
 }
 
-async function rootHandler (req: Request, res: Response) { 
+async function rootHandler (req: Request, res: Response, next: NextFunction) { 
   const serverID = req.params.server;
   const server = await client.guilds.fetch(serverID);
 
-  const limit = parseInt(req.query.l?.toString()) || 1;
-  if (!limit || limit < 0 || limit > 1000) throw { status: 400, error: 'Invalid limit' };
-  const query = req.query.q?.toString() || "";
-  if (!query) throw { status: 400, error: 'Invalid query' };
+  const limit = parseInt(<string>req.query.l) || 1;
+  if (!limit || limit < 0 || limit > 1000) return next({ status: 400, error: 'Invalid limit' });
+  const query = <string>req.query.q || "";
+  if (!query) return next({ status: 400, error: 'Invalid query' });
  
   // All members
   const membersCollection = await server.members.fetch({ query, limit });

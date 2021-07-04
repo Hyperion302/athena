@@ -1,14 +1,14 @@
 import express from "express";
 import { Channel, ChannelType } from "athena-common";
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { client } from "@/client";
 
-async function channelHandler (req: Request, res: Response) {
+async function channelHandler (req: Request, res: Response, next: NextFunction) {
   const serverID = req.params.server;
   const server = await client.guilds.fetch(serverID);
 
   const channel = server.channels.resolve(req.params.channel);
-  if (!channel) throw { status: 404, message: "Channel not found" };
+  if (!channel) return next({ status: 404, message: "Channel not found" });
 
   let type: ChannelType | null = null;
   switch(channel.type) {

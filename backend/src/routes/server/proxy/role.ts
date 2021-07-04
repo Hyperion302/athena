@@ -1,15 +1,15 @@
 import express from "express"
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { Role } from "athena-common";
 import { client } from "@/client";
 
-async function roleHandler (req: Request, res: Response) {
+async function roleHandler (req: Request, res: Response, next: NextFunction) {
   const serverID = req.params.server;
   const server = await client.guilds.fetch(serverID);
 
 
   const role = await server.roles.fetch(req.params.role);
-  if (!role) throw { status: 404, message: "Role not found" };
+  if (!role) return next({ status: 404, message: "Role not found" });
 
   const returnedRole: Role = {
     id: role.id,

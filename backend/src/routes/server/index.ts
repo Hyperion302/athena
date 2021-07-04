@@ -1,13 +1,13 @@
 import express from "express";
 import proposalHandler from "@/routes/server/proposals";
 import proxyHandler from "@/routes/server/proxy";
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { client } from "@/client";
 
 // GET /server
-async function rootHandler (req: Request, res: Response): Promise<void> {
+async function rootHandler (req: Request, res: Response, next: NextFunction): Promise<void> {
   const serverIDs = <string[]>req.query.servers;
-  if (serverIDs.length > 200) throw { status: 401, message: 'Too many servers' };
+  if (serverIDs.length > 200) return next({ status: 401, message: 'Too many servers' });
 
   const filteredServers = serverIDs.filter((serverID) => client.guilds.resolve(serverID) !== null);
   res.status(200).json(filteredServers);
