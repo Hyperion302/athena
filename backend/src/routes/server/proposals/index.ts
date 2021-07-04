@@ -44,10 +44,9 @@ async function rootGetHandler (req: Request, res: Response, next: NextFunction):
 async function rootPostHandler (req: Request, res: Response, next: NextFunction): Promise<void> {
   const serverID = req.params.server;
   const server = await client.guilds.fetch(serverID);
-  const userID = res.locals.user;
+  const userID = res.locals.user.id;
 
   const body: NewProposalRequest = req.body;
-  logger.info(body);
   // Validate input
   const name = body.name;
   if (
