@@ -5,6 +5,7 @@ import { Request, Response, NextFunction } from "express";
 import {myVote} from "@/proposal/vote/db";
 import {getActions} from "@/action";
 import {resolveActions} from "@/action/resolver";
+import logger from "@/logging";
 
 async function proposalLookupMiddleware (req: Request, res: Response, next: NextFunction) {
   const proposalID = req.params.proposal;
@@ -61,7 +62,7 @@ async function actionsHandler (req: Request, res: Response, next: NextFunction) 
   const server = res.locals.server;
   const actions = await getActions(proposalID);
 
-  const resolve = req.params.r !== undefined;
+  const resolve = req.query.r !== undefined;
   if (resolve) {
     try {
       const resolved = await resolveActions(server, actions);
