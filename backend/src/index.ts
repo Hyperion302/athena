@@ -63,7 +63,7 @@ function refreshStatus() {
   client.user
     .setPresence({
       activity: {
-        name: `${serverCount} servers | ".DRKT help" to get started`,
+        name: `${serverCount} servers`,
         type: "LISTENING",
       },
     })
