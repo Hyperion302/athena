@@ -1,12 +1,18 @@
 import { Guild } from 'discord.js';
 import { ActionValidationResult } from '@/action';
-import { ChangeRoleAssignmentAction } from "athena-common";
+import { ResolvedChangeRoleAssignmentAction, ChangeRoleAssignmentAction, ReferenceType } from "athena-common";
 import {
-  resolveRoleReference,
-  resolveUserReference,
+  decacheRoleReference,
+  decacheUserReference,
   ResourceList,
 } from '@/action/executor';
 import { validateRoleReference, validateUserReference } from '@/action/validator';
+import {
+  ResolutionList,
+  nameToRef,
+  resolveUserReference,
+  resolveRoleReference
+} from '@/action/resolver';
 
 export async function validateChangeRoleAssignmentAction(
   guild: Guild,
@@ -25,18 +31,36 @@ export async function validateChangeRoleAssignmentAction(
     referenceValidations: validations,
   };
 }
+export async function resolveChangeRoleAssignmentAction(
+  guild: Guild,
+  action: ChangeRoleAssignmentAction,
+  resList: ResolutionList
+): Promise<ResolvedChangeRoleAssignmentAction> {
+  const grant = await Promise.all(
+    action.grant.map((grant) => resolveUserReference(guild, grant))
+  );
+  const revoke = await Promise.all(
+    action.revoke.map((revoke) => resolveUserReference(guild, revoke))
+  );
+  return {
+    ...action,
+    grant: grant.map(nameToRef),
+    revoke: revoke.map(nameToRef),
+    role: nameToRef(await resolveRoleReference(guild, resList, action.role))
+  }
+}
 export async function executeChangeRoleAssignmentAction(
   guild: Guild,
   action: ChangeRoleAssignmentAction,
   resourceList: ResourceList
 ) {
-  const role = await resolveRoleReference(guild, resourceList, action.role);
+  const role = await decacheRoleReference(guild, resourceList, action.role);
   const grantPromises = action.grant.map(async (user) => {
-    const resolvedUser = await resolveUserReference(guild, user);
+    const resolvedUser = await decacheUserReference(guild, user);
     await resolvedUser.roles.add(role);
   });
   const revokePromises = action.revoke.map(async (user) => {
-    const resolvedUser = await resolveUserReference(guild, user);
+    const resolvedUser = await decacheUserReference(guild, user);
     await resolvedUser.roles.remove(role);
   });
   await Promise.all([...grantPromises, ...revokePromises]);

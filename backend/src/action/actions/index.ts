@@ -1,70 +1,87 @@
 import { Channel, Guild, Role } from 'discord.js';
-import { Action, tAction } from "athena-common";
+import { Action, tAction, tResolvedAction } from "athena-common";
 import { ResourceList } from '@/action/executor';
 import { ActionValidationResult } from '@/action/validator';
+import { ResolutionList } from '../resolver';
 import {
   executeBanAction,
   validateBanAction,
+  resolveBanAction
 } from './ban';
 import {
   executeChangeChannelSettingAction,
   validateChangeChannelSettingAction,
+  resolveChangeChannelSettingAction
 } from './changeChannelSetting';
 import {
   validateChangePermissionOverrideAction,
   executeChangePermissionOverrideAction,
+  resolveChangePermissionOverrideAction
 } from './changePermissionOverride';
 import {
   executeChangeRoleAssignmentAction,
   validateChangeRoleAssignmentAction,
+  resolveChangeRoleAssignmentAction
 } from './changeRoleAssignment';
 import {
   executeChangeRolePermissionsAction,
   validateChangeRolePermissionsAction,
+  resolveChangeRolePermissionsAction
 } from './changeRolePermissions';
 import {
   executeChangeRoleSettingAction,
   validateChangeRoleSettingAction,
+  resolveChangeRoleSettingAction
 } from './changeRoleSetting';
 import {
   executeChangeServerSettingAction,
   validateChangeServerSettingAction,
+  resolveChangeServerSettingAction
 } from './changeServerSetting';
 import {
   executeCreateChannelAction,
   validateCreateChannelAction,
+  resolveCreateChannelAction
 } from './createChannel';
 import {
   executeCreateRoleAction,
   validateCreateRoleAction,
+  resolveCreateRoleAction
 } from './createRole';
 import { 
   executeDestroyChannelAction,
   validateDestroyChannelAction,
+  resolveDestroyChannelAction
 } from './destroyChannel';
 import {
   executeDestroyRoleAction,
   validateDestroyRoleAction,
+  resolveDestroyRoleAction
 } from './destroyRole';
 import {
   executeKickAction,
+  resolveKickAction,
   validateKickAction,
 } from './kick';
 import {
   executeMoveChannelAction,
   validateMoveChannelAction,
+  resolveMoveChannelAction
 } from './moveChannel';
 import {
   executeMoveRoleAction,
   validateMoveRoleAction,
+  resolveMoveRoleAction
 } from './moveRole';
 import {
   executeSetCategoryAction,
   validateSetCategoryAction,
+  resolveSetCategoryAction
 } from './setCategory';
 import {
   executeSyncToCategoryAction,
   validateSyncToCategoryAction,
+  resolveSyncToCategoryAction
 } from './syncToCategory';
 
 export const validators: {
@@ -90,6 +107,32 @@ export const validators: {
   [Action.SetCategory]: validateSetCategoryAction,
   [Action.SyncToCategory]: validateSyncToCategoryAction,
 };
+
+export const resolvers: {
+  [key: string]: (
+    guild: Guild,
+    action: tAction,
+    resList?: ResolutionList
+  ) => Promise<tResolvedAction>;
+} = {
+  [Action.Kick]: resolveKickAction,
+  [Action.Ban]: resolveBanAction,
+  [Action.CreateRole]: resolveCreateRoleAction,
+  [Action.DestroyRole]: resolveDestroyRoleAction,
+  [Action.ChangeRoleAssignment]: resolveChangeRoleAssignmentAction,
+  [Action.ChangeRolePermissions]: resolveChangeRolePermissionsAction,
+  [Action.ChangePermissionOverrideOn]: resolveChangePermissionOverrideAction,
+  [Action.ChangeRoleSetting]: resolveChangeRoleSettingAction,
+  [Action.MoveRole]: resolveMoveRoleAction,
+  [Action.MoveChannel]: resolveMoveChannelAction,
+  [Action.CreateChannel]: resolveCreateChannelAction,
+  [Action.DestroyChannel]: resolveDestroyChannelAction,
+  [Action.ChangeServerSetting]: resolveChangeServerSettingAction,
+  [Action.ChangeChannelSetting]: resolveChangeChannelSettingAction,
+  [Action.SetCategory]: resolveSetCategoryAction,
+  [Action.SyncToCategory]: resolveSyncToCategoryAction,
+
+}
 
 // If an executor returns a channel or role, that channel/role is added to the resource
 // list as the output for that action.

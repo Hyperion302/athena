@@ -1,7 +1,8 @@
 import { Guild } from 'discord.js';
-import { ChangeRoleSettingAction, RoleSetting } from "athena-common";
-import { resolveRoleReference, ResourceList } from '@/action/executor';
+import { ChangeRoleSettingAction, ReferenceType, ResolvedChangeRoleSettingAction, RoleSetting } from "athena-common";
+import { decacheRoleReference, ResourceList } from '@/action/executor';
 import { ActionValidationResult, validateRoleReference } from '@/action/validator';
+import { nameToRef, ResolutionList, resolveRoleReference } from '@/action/resolver';
 
 export async function validateChangeRoleSettingAction(
   guild: Guild,
@@ -13,12 +14,22 @@ export async function validateChangeRoleSettingAction(
     referenceValidations: [roleValidation],
   };
 }
+export async function resolveChangeRoleSettingAction(
+  guild: Guild,
+  action: ChangeRoleSettingAction,
+  resList: ResolutionList
+): Promise<ResolvedChangeRoleSettingAction> {
+  return {
+    ...action,
+    role: nameToRef(await resolveRoleReference(guild, resList, action.role))
+  }
+}
 export async function executeChangeRoleSettingAction(
   guild: Guild,
   action: ChangeRoleSettingAction,
   resourceList: ResourceList
 ) {
-  const role = await resolveRoleReference(guild, resourceList, action.role);
+  const role = await decacheRoleReference(guild, resourceList, action.role);
   switch (action.setting) {
     case RoleSetting.Color:
       await role.setColor(action.value);

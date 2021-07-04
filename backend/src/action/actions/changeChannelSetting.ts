@@ -1,7 +1,8 @@
 import { Guild } from 'discord.js';
-import { ChangeChannelSettingAction, ChannelSetting } from "athena-common";
-import { resolveChannelReference, ResourceList } from '@/action/executor';
+import { ChangeChannelSettingAction, ChannelSetting, ReferenceType, ResolvedChangeChannelSettingAction } from "athena-common";
+import { decacheChannelReference, ResourceList } from '@/action/executor';
 import { ActionValidationResult, validateChannelReference } from '@/action/validator';
+import { nameToRef, ResolutionList, resolveChannelReference } from '@/action/resolver';
 
 export async function validateChangeChannelSettingAction(
   guild: Guild,
@@ -13,12 +14,22 @@ export async function validateChangeChannelSettingAction(
     referenceValidations: [channelValidation],
   };
 }
+export async function resolveChangeChannelSettingAction(
+  guild: Guild,
+  action: ChangeChannelSettingAction,
+  resList: ResolutionList
+): Promise<ResolvedChangeChannelSettingAction> {
+  return {
+    ...action,
+    channel: nameToRef(await resolveChannelReference(guild, resList, action.channel))
+  }
+}
 export async function executeChangeChannelSettingAction(
   guild: Guild,
   action: ChangeChannelSettingAction,
   resourceList: ResourceList
 ) {
-  const channel = await resolveChannelReference(
+  const channel = await decacheChannelReference(
     guild,
     resourceList,
     action.channel

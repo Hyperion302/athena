@@ -4,6 +4,7 @@ import { Vote } from "athena-common";
 import { Request, Response, NextFunction } from "express";
 import {myVote} from "@/proposal/vote/db";
 import {getActions} from "@/action";
+import {resolveActions} from "@/action/resolver";
 
 async function proposalLookupMiddleware (req: Request, res: Response, next: NextFunction) {
   const proposalID = req.params.proposal;
@@ -55,10 +56,22 @@ async function voteGetHandler (req: Request, res: Response) {
   res.status(200).json(vote);
 }
 // GET /server/:server/proposal/:proposal/actions
-async function actionsHandler (req: Request, res: Response) {
+async function actionsHandler (req: Request, res: Response, next: NextFunction) {
   const proposalID = req.params.proposal;
+  const server = res.locals.server;
   const actions = await getActions(proposalID);
-  res.status(200).json(actions);
+
+  const resolve = req.params.r !== undefined;
+  if (resolve) {
+    try {
+      const resolved = await resolveActions(server, actions);
+      res.status(200).json(resolved);
+    } catch {
+      return next({ status: 500, message: "Failed to resolve all actions" });
+    }
+  } else {
+    res.status(200).json(actions);
+  }
 }
 
 const router = express.Router({ mergeParams: true });

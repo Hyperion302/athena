@@ -76,9 +76,9 @@ Returns the new vote tally
 
 Caller must a member of :server
 
-### GET /server/:server/proposal/:proposal/actions
+### GET /server/:server/proposal/:proposal/actions?r=:resolve
 
-Get and resolve all actions of :proposal
+Get (and resolve if :resolve is set) all actions of :proposal
 
 Caller must be a member of :server
 

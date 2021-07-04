@@ -1,12 +1,13 @@
 import { CategoryChannel, Guild } from 'discord.js';
-import { SetCategoryAction } from "athena-common";
+import { ReferenceType, ResolvedSetCategoryAction, SetCategoryAction } from "athena-common";
 import { ExecutionError } from '@/errors';
-import { resolveChannelReference, ResourceList } from '@/action/executor';
+import { decacheChannelReference, ResourceList } from '@/action/executor';
 import {
   ActionValidationResult,
   validateCategoryReference,
   validateChannelReference,
 } from '@/action/validator';
+import {nameToRef, ResolutionList, resolveChannelReference} from '../resolver';
 
 export async function validateSetCategoryAction(
   guild: Guild,
@@ -22,13 +23,24 @@ export async function validateSetCategoryAction(
     referenceValidations: [channelValidation && categoryValidation],
   };
 }
+export async function resolveSetCategoryAction(
+  guild: Guild,
+  action: SetCategoryAction,
+  resList: ResolutionList
+): Promise<ResolvedSetCategoryAction> {
+  return{
+    ...action,
+    channel: nameToRef(await resolveChannelReference(guild, resList, action.channel)),
+    category: nameToRef(await resolveChannelReference(guild, resList, action.category))
+  };
+}
 export async function executeSetCategoryAction(
   guild: Guild,
   action: SetCategoryAction,
   resourceList: ResourceList,
   i: number
 ) {
-  const channel = await resolveChannelReference(
+  const channel = await decacheChannelReference(
     guild,
     resourceList,
     action.channel
@@ -36,7 +48,7 @@ export async function executeSetCategoryAction(
   if (action.category == null) {
     await channel.setParent(null);
   } else {
-    const category = await resolveChannelReference(
+    const category = await decacheChannelReference(
       guild,
       resourceList,
       action.category

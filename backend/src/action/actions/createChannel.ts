@@ -1,6 +1,7 @@
 import { Channel, Guild } from 'discord.js';
-import { CreateChannelAction, ChannelType } from "athena-common";
+import { CreateChannelAction, ChannelType, ResolvedCreateChannelAction } from "athena-common";
 import { ActionValidationResult } from '@/action/validator';
+import {ResolutionList} from '../resolver';
 
 export async function validateCreateChannelAction(): Promise<ActionValidationResult> {
   return {
@@ -8,6 +9,12 @@ export async function validateCreateChannelAction(): Promise<ActionValidationRes
     referenceValidations: [],
   };
 }
+
+export async function resolveCreateChannelAction(
+  guild: Guild,
+  action: CreateChannelAction,
+  resList: ResolutionList
+): Promise<ResolvedCreateChannelAction> { return action; }
 
 const toDJS: {
   [ChannelType.Text]: "text",

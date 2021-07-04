@@ -24,9 +24,10 @@ router.use("/:server", async (req, res, next) => {
   if (!serverID) next({ status: 400, message: "Invalid server" });
   const server = await client.guilds.fetch(serverID);
   if (!server) next({ status: 404, message: "Server not found" });
+  res.locals.server = server;
 
   // Make sure caller is in server
-  const userID = res.locals.user;
+  const userID = res.locals.user.id;
   const user = await server.members.fetch(userID);
   if (!user) return next({ status: 403, message: "Must be a member of given server" });
   next();

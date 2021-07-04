@@ -1,7 +1,8 @@
 import { Guild } from 'discord.js';
-import { DestroyRoleAction, ReferenceType } from "athena-common";
-import { ResourceList, resolveRoleReference } from '@/action/executor';
+import { DestroyRoleAction, ReferenceType, ResolvedDestroyRoleAction } from "athena-common";
+import { ResourceList, decacheRoleReference } from '@/action/executor';
 import { ActionValidationResult, validateRoleReference } from '@/action/validator';
+import {nameToRef, ResolutionList, resolveRoleReference} from '../resolver';
 
 export async function validateDestroyRoleAction(
   guild: Guild,
@@ -13,12 +14,22 @@ export async function validateDestroyRoleAction(
     referenceValidations: [roleValidation],
   };
 }
+export async function resolveDestroyRoleAction(
+  guild: Guild,
+  action: DestroyRoleAction,
+  resList: ResolutionList
+): Promise<ResolvedDestroyRoleAction> {
+  return {
+    ...action,
+    role: nameToRef(await resolveRoleReference(guild, resList, action.role))
+  }
+}
 export async function executeDestroyRoleAction(
   guild: Guild,
   action: DestroyRoleAction,
   resourceList: ResourceList
 ) {
-  const role = await resolveRoleReference(guild, resourceList, action.role);
+  const role = await decacheRoleReference(guild, resourceList, action.role);
   await role.delete();
   if (action.role.type == ReferenceType.Pointer) {
     delete resourceList[action.role.index];
