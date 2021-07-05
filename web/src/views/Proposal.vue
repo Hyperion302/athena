@@ -15,7 +15,7 @@
           <div class="text-subtitle-1 text-center">
             <span>{{ author.username }}#{{ author.discriminator }}</span>
             <span> • </span>
-            <span>{{ durationFormat(Date.now() - proposal.createdOn) }}</span>
+            <span>{{ durationFormat(Date.now() - proposal.createdOn) }} ago</span>
             <span> • </span>
             <span>{{ statusString }}</span>
           </div>
