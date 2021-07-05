@@ -48,7 +48,7 @@ import Vue from "vue";
 import { mapGetters } from "vuex";
 import { Proposal, Vote, ProposalStatus } from "athena-common";
 import truncate from "../util/truncate";
-import { getVotes, getMyVote } from "../services/proposals";
+import { getVotes, getMyVote, vote } from "@/services/proposals";
 
 export default Vue.extend({
   data() { return {
@@ -82,7 +82,14 @@ export default Vue.extend({
       this.myVote = await getMyVote(this.proposal.server, this.proposal.id, this.token);
     },
     async vote(v: Vote) {
-      this.myVote = v; // temp
+      if (!this.proposal) { return; }
+      const votes = await vote(v, this.proposal.server, this.proposal.id, this.token);
+      if (votes !== null) {
+        this.myVote = v;
+        this.yes = votes[Vote.Yes];
+        this.no = votes[Vote.No];
+        this.abstain = votes[Vote.Abstain];
+      }
     },
     trunc: truncate
   },
