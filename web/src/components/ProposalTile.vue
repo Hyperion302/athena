@@ -1,6 +1,7 @@
 <template>
   <v-card
     outlined
+    max-width="400"
     @click="$router.push(`/servers/${proposal.server}/proposals/${proposal.id}`)"
   >
     <v-progress-linear

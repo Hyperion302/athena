@@ -11,6 +11,7 @@
           <p v-else-if="recentProposals.length == 0">No proposals</p>
           <proposal-tile
             v-for="proposal in recentProposals"
+            class="my-6"
             :key="proposal.id"
             :proposal="proposal"
             v-else
@@ -25,6 +26,7 @@
           <p v-else-if="closingProposals.length == 0">No proposals</p>
           <proposal-tile
             v-for="proposal in closingProposals"
+            class="my-6"
             :key="proposal.id"
             :proposal="proposal"
             v-else
