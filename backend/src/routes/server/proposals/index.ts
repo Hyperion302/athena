@@ -78,7 +78,6 @@ async function rootPostHandler (req: Request, res: Response, next: NextFunction)
     || !Array.isArray(actions)
   ) return next({ status: 400, message: "Missing actions list"});
   const validationResult = await validateActions(server, actions);
-  console.debug(validationResult);
   if (!validationResult.valid) return next({ status: 400, message: "An action is invalid" });
 
   // Create proposal

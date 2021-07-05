@@ -912,7 +912,7 @@ export default Vue.extend({
         return {
           action: Action.CreateChannel,
           name: action.name,
-          type: action.type
+          type: action.channelType
         }
        case Action.DestroyChannel:
         return {
