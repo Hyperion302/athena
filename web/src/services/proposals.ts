@@ -27,7 +27,7 @@ export async function getRecentProposals(
 ): Promise<Proposal[]> {
   const results = await drkt.get(`server/${server}/proposal/recent`, {
     ...tokenOpts(token),
-    params: { c: 10 }
+    params: { c: 6 }
   });
   return results.data.map(apiToObj);
 }
@@ -38,7 +38,7 @@ export async function getClosingProposals(
 ): Promise<Proposal[]> {
   const results = await drkt.get(`server/${server}/proposal/endingSoon`, {
     ...tokenOpts(token),
-    params: { c: 10, w: 60 * 60 }
+    params: { c: 6, w: 60 * 60 }
   });
   return results.data.map(apiToObj);
 }
