@@ -6,7 +6,7 @@
     flat 
     app
   >
-    <v-toolbar-title>ATHENA</v-toolbar-title>
+    <v-toolbar-title style="cursor: pointer" @click="$router.push('/dashboard')">ATHENA</v-toolbar-title>
     <v-spacer />
     <v-toolbar-items>
       <template v-if="loggedIn">
