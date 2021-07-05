@@ -5,11 +5,8 @@ export const MAX_COLOR = 16777215;
 export {
   getAction,
   getActions,
-  getNextIndex,
   createAction,
-  replaceAction,
   removeAction,
-  insertAction,
 } from './db';
 export { executeActions } from './executor';
 export {
