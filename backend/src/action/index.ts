@@ -55,9 +55,6 @@ export function relatedIDs(action: tAction): string[] {
 export {
   getAction,
   getActions,
-  checkArchive,
-  archiveName,
-  removeArchive,
   createAction,
   removeAction,
 } from './db';
@@ -71,3 +68,4 @@ export {
   validateActions,
   validateAction,
 } from './validator';
+export * as Actions from "./actions";

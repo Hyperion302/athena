@@ -9,11 +9,11 @@
         top
       >
       </v-progress-linear>
-      <v-row v-if="author && proposal">
+      <v-row v-if="proposal">
         <v-col>
           <div class="text-h2 text-center">{{ proposal.name }}</div>
           <div class="text-subtitle-1 text-center">
-            <span>{{ author.username }}#{{ author.discriminator }}</span>
+            <span>{{ proposal.author.name }}</span>
             <span> • </span>
             <span>{{ durationFormat(Date.now() - proposal.createdOn) }} ago</span>
             <span> • </span>
@@ -45,7 +45,7 @@
             class="mx-4"
             @click="submitVote(Vote.Yes)"
           >
-            <div class="text-h2 text-center">{{ yes }}</div>
+            <div class="text-h2 text-center">{{ proposal.votes[Vote.Yes] }}</div>
           </v-sheet>
         </v-hover>
         <v-hover
@@ -59,7 +59,7 @@
             class="mx-4"
             @click="submitVote(Vote.Abstain)"
           >
-            <div class="text-h2 text-center">{{ abstain }}</div>
+            <div class="text-h2 text-center">{{ proposal.votes[Vote.Abstain] }}</div>
           </v-sheet>
         </v-hover>
         <v-hover
@@ -73,7 +73,7 @@
             class="mx-4"
             @click="submitVote(Vote.No)"
           >
-            <div class="text-h2 text-center">{{ no }}</div>
+            <div class="text-h2 text-center">{{ proposal.votes[Vote.No] }}</div>
           </v-sheet>
         </v-hover>
       </v-row>
@@ -94,7 +94,7 @@ import ActionList from "@/components/ActionList.vue";
 import { getPermissionStringsFor } from "@/util/permissions";
 import { Proposal, Vote, tResolvedAction, tAction, Action, ResolvedResourceReference, ProposalStatus } from "athena-common";
 import { User } from "@/models/user";
-import { getProposal, getVotes, getMyVote, getActions, vote } from "@/services/proposals";
+import { getProposal, getMyVote, getActions, vote } from "@/services/proposals";
 import { getMember } from "@/services/discord";
 import durationFormat from "@/util/durationFormat";
 
@@ -102,9 +102,6 @@ export default Vue.extend({
   data() { return {
     proposal: <Proposal>null,
     author: <User>null,
-    yes: 0,
-    abstain: 0,
-    no: 0,
     Vote,
     myVote: <Vote>null,
     actions: <Action[]>[]
@@ -113,9 +110,7 @@ export default Vue.extend({
   components: { ActionList },
   created() {
     // Fetch proposal
-    this.fetchProposal().then(this.fetchAuthor);
-    // Fetch voting
-    this.fetchVotes();
+    this.fetchProposal();
     // Fetch actions
     this.fetchActions();
   },
@@ -159,30 +154,12 @@ export default Vue.extend({
       if (!this.proposal) { return; }
       if (this.proposal.status != ProposalStatus.Running) { return; }
       if (v === this.myVote) { v = null; }
-      await vote(v, this.serverID, this.proposalID, this.token);
+      this.proposal.votes = await vote(v, this.serverID, this.proposalID, this.token);
       this.myVote = v;
-      this.fetchVotes();
     },
     async fetchProposal() {
       if (!this.proposalID) { return; }
       this.proposal = await getProposal(this.serverID, this.proposalID, this.token);
-    },
-    async fetchAuthor() {
-      if (!this.serverID || !this.proposal) { return; }
-      this.author = await getMember(
-        this.token,
-        this.proposal.server,
-        this.proposal.author
-      );
-    },
-    async fetchVotes() {
-      if (!this.proposalID) { return; }
-      const votes = await getVotes(this.serverID, this.proposalID, this.token);
-      this.yes = votes[Vote.Yes];
-      this.no = votes[Vote.No];
-      this.abstain = votes[Vote.Abstain];
-
-      this.myVote = await getMyVote(this.serverID, this.proposalID, this.token);
     },
     async fetchActions() {
       if (!this.proposalID) { return; }

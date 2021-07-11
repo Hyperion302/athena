@@ -2,7 +2,6 @@ import express from "express";
 import proposalHandler from "@/routes/server/proposals/proposal";
 import { getProposals, createProposal, getRecentProposals, getEndingProposals, scheduleProposal } from "@/proposal";
 import { Request, Response, NextFunction } from "express";
-import logger from "@/logging";
 import {
   ProposalStatus,
   PROPOSAL_NAME_MIN,
@@ -14,7 +13,8 @@ import {
   NewProposalRequest,
 } from "athena-common";
 import { client } from "@/client";
-import {createAction, validateAction, validateActions} from "@/action";
+import { createAction, validateActions } from "@/action";
+import { resolveProposals} from "@/resolver";
 
 // GET /server/:server/proposal/
 async function rootGetHandler (req: Request, res: Response, next: NextFunction): Promise<void> { 
@@ -30,14 +30,15 @@ async function rootGetHandler (req: Request, res: Response, next: NextFunction):
   // inevitably cause overflow issues.  It should be a string, but if we pass
   // knex a string SQL will not cast the id column to a number during the 
   // comparison. :/
-  const start = parseInt(<any>req.query.s) || 0;
+  const start = BigInt(<any>req.query.s) || 0;
   if (
-    isNaN(start)
+    isNaN(parseInt(<any>req.query.s))
     || start < 0
   ) return next({ status: 400, message: "Invalid start" });
 
-  const proposals = await getProposals(serverID, count, start);
-  res.status(200).json(proposals);
+  const proposals = await getProposals(serverID, count, start.toString());
+  const resolvedProposals = await resolveProposals(res.locals.server, proposals);
+  res.status(200).json(resolvedProposals);
 }
 
 // POST /server/:server/proposal/
@@ -109,7 +110,8 @@ async function recentHandler (req: Request, res: Response, next: NextFunction): 
   if (count <= 0 || count > 1000) return next({ status: 400, message: "Invalid count" });
 
   const proposals = await getRecentProposals(serverID, count);
-  res.status(200).json(proposals);
+  const resolvedProposals = await resolveProposals(res.locals.server, proposals);
+  res.status(200).json(resolvedProposals);
 }
 // GET /server/:server/proposal/endingSoon
 async function endingSoonHandler (req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -127,7 +129,8 @@ async function endingSoonHandler (req: Request, res: Response, next: NextFunctio
   ) return next({ status: 400, message: "Invalid within" });
 
   const proposals = await getEndingProposals(serverID, within, count);
-  res.status(200).json(proposals);
+  const resolvedProposals = await resolveProposals(res.locals.server, proposals);
+  res.status(200).json(resolvedProposals);
 }
 
 const router = express.Router({ mergeParams: true });

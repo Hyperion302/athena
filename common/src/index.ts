@@ -1,4 +1,10 @@
-export * from "./lib/models";
-export * from "./lib/serialize";
+import * as I from "./lib/interfaces";
+import * as C from "./lib/constants";
+
+export * from "./lib/interfaces";
 export * from "./lib/constants";
-export * from "./lib/permissions";
+
+export default {
+  Interfaces: I,
+  Constants: C
+}

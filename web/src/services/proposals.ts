@@ -53,16 +53,6 @@ export async function getProposal(
   return apiToObj(result.data);
 }
 
-export async function getVotes(
-  server: string,
-  proposal: string,
-  token: string,
-): Promise<Votes | null> {
-  const result = await drkt.get(`server/${server}/proposal/${proposal}/votes`, tokenOpts(token));
-  if (result.status === 404) return null;
-  return result.data;
-}
-
 export async function getMyVote(
   server: string,
   proposal: string,

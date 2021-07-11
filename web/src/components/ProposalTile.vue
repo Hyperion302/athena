@@ -2,13 +2,14 @@
   <v-card
     outlined
     max-width="400"
-    @click="$router.push(`/servers/${proposal.server}/proposals/${proposal.id}`)"
+    @click="$router.push(`/servers/${proposal.server.original.id}/proposals/${proposal.id}`)"
   >
     <v-progress-linear
-      :value="((myVote == Vote.No ? no : yes) * 100) / (yes + no + abstain)"
+      :value="barValue"
       :color="myVote == Vote.No ? 'error' : 'success'"
+      :indeterminate="!proposal"
     />
-    <v-row no-gutters>
+    <v-row no-gutters v-if="proposal">
       <v-col>
         <v-card-title
           class="text-h5"
@@ -48,47 +49,47 @@ import Vue from "vue";
 import { mapGetters } from "vuex";
 import { Proposal, Vote, ProposalStatus } from "athena-common";
 import truncate from "../util/truncate";
-import { getVotes, getMyVote, vote } from "@/services/proposals";
+import { getMyVote, getProposal, vote } from "@/services/proposals";
 
 export default Vue.extend({
   data() { return {
-    yes: 0,
-    no: 0,
-    abstain: 0,
-    myVote: null,
+    myVote: <Vote>null,
     ProposalStatus,
+    proposal: <Proposal>null,
     Vote,
   }; },
-  props: ['proposal'],
+  props: ['proposalID', 'serverID'],
   created() {
-    if (!this.proposal) { return; }
-    // Fetch votes
-    this.fetchVotes();
+    if (!this.proposalID) { return; }
+    this.fetchProposal();
     // Fetch MY vote
+    this.fetchMyVote();
   },
-  computed: mapGetters("auth", [
-    'token'
-  ]),
+  computed: {
+    ...mapGetters("auth", [
+      'token'
+    ]),
+    barValue() {
+      if (!this.proposal) return 0;
+      const total = this.proposal.votes[Vote.Yes] + this.proposal.votes[Vote.No] + this.proposal.votes[Vote.Abstain];
+      const count = this.myVote === Vote.No ? this.proposal.votes.no : this.proposal.votes.yes;
+      return (count * 100) / total;
+    }
+  },
   methods: {
-    async fetchVotes() {
-      if (!this.proposal) { return; }
-      const votes = await getVotes(this.proposal.server, this.proposal.id, this.token);
-      this.yes = votes[Vote.Yes];
-      this.no = votes[Vote.No];
-      this.abstain = votes[Vote.Abstain];
+    async fetchProposal() {
+      if (!this.proposalID) { return; }
+      this.proposal = await getProposal(this.serverID, this.proposalID, this.token);
     },
     async fetchMyVote() {
-      if (!this.proposal) { return; }
-      this.myVote = await getMyVote(this.proposal.server, this.proposal.id, this.token);
+      this.myVote = await getMyVote(this.serverID, this.proposalID, this.token);
     },
     async vote(v: Vote) {
       if (!this.proposal) { return; }
-      const votes = await vote(v, this.proposal.server, this.proposal.id, this.token);
+      const votes = await vote(v, this.proposal.server.original.id, this.proposal.id, this.token);
       if (votes !== null) {
         this.myVote = v;
-        this.yes = votes[Vote.Yes];
-        this.no = votes[Vote.No];
-        this.abstain = votes[Vote.Abstain];
+        this.proposal.votes = votes;
       }
     },
     trunc: truncate

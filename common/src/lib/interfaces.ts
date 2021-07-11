@@ -1,27 +1,5 @@
-export enum Action {
-  Kick,
-  Ban,
-  CreateRole,
-  DestroyRole,
-  ChangeRoleAssignment,
-  GrantRole,
-  RevokeRole,
-  ChangeRolePermissions,
-  AllowPermissions,
-  DenyPermissions,
-  AddPermisionOverrideOn,
-  ChangePermissionOverrideOn,
-  RemovePermissionOverrideOn,
-  ChangeRoleSetting,
-  MoveRole,
-  MoveChannel,
-  CreateChannel,
-  DestroyChannel,
-  ChangeServerSetting,
-  ChangeChannelSetting,
-  SetCategory,
-  SyncToCategory,
-}
+import * as Constants from "./constants";
+import * as Util from "./util";
 
 export type tAction =
   | KickAction
@@ -63,55 +41,13 @@ export type tResolvedAction =
   | ResolvedSetCategoryAction
   | ResolvedSyncToCategoryAction;
 
-export enum RoleSetting {
-  Color,
-  Hoist,
-  Mentionable,
-  Name,
-}
 
-export enum ServerSetting {
-  AFKChannel,
-  AFKTimeout,
-  Name,
-  ContentFilter,
-}
-
-export enum ChannelSetting {
-  Name,
-  Topic,
-}
-
-export enum MoveRelativePosition {
-  Above,
-  Below,
-}
-
-export enum ChannelType {
-  Text,
-  Voice,
-  Category,
-}
-
-export enum ReferenceType {
-  Pointer,
-  ID,
-  Resolved,
-  /**
-   * @deprecated Use ID instead
-   */
-  FullName,
-  /**
-   * @deprecated Use ID instead
-   */
-  Username,
-}
 
 /**
  * @deprecated Use {@link IDResourceReference} instead
  */
 export interface UsernameResourceReference {
-  type: ReferenceType.Username;
+  type: Constants.ReferenceType.Username;
   username: string;
   discriminator: number;
 }
@@ -120,23 +56,24 @@ export interface UsernameResourceReference {
  * @deprecated Use {@link IDResourceReference} instead
  */
 export interface FullNameResourceReference {
-  type: ReferenceType.FullName;
+  type: Constants.ReferenceType.FullName;
   name: string;
 }
 
 export interface IDResourceReference {
-  type: ReferenceType.ID;
+  type: Constants.ReferenceType.ID;
   id: string;
 }
 
 export interface PointerResourceReference {
-  type: ReferenceType.Pointer;
+  type: Constants.ReferenceType.Pointer;
   index: number;
 }
 
-export interface ResolvedResourceReference {
-  type: ReferenceType.Resolved;
+export interface ResolvedResourceReference{
+  type: Constants.ReferenceType.Resolved;
   name: string;
+  original: ResourceReference;
 }
 
 export type ResourceReference =
@@ -148,7 +85,7 @@ export type ResourceReference =
  * Add a permission override for a user or role to a channel
  */
 export interface AddPermissionOverrideAction {
-  action: Action.AddPermisionOverrideOn;
+  action: Constants.Action.AddPermisionOverrideOn;
   channel: ResourceReference;
   subject: ResourceReference;
   allow: number;
@@ -156,7 +93,7 @@ export interface AddPermissionOverrideAction {
   deny: number;
 }
 export interface ResolvedAddPermissionOverrideAction {
-  action: Action.AddPermisionOverrideOn;
+  action: Constants.Action.AddPermisionOverrideOn;
   channel: ResolvedResourceReference;
   subject: ResolvedResourceReference;
   allow: number;
@@ -168,11 +105,11 @@ export interface ResolvedAddPermissionOverrideAction {
  * Ban a user
  */
 export interface BanAction {
-  action: Action.Ban;
+  action: Constants.Action.Ban;
   user: ResourceReference;
 }
 export interface ResolvedBanAction {
-  action: Action.Ban;
+  action: Constants.Action.Ban;
   user: ResolvedResourceReference;
 }
 
@@ -180,15 +117,15 @@ export interface ResolvedBanAction {
  * Change a channel's setting
  */
 export interface ChangeChannelSettingAction {
-  action: Action.ChangeChannelSetting;
+  action: Constants.Action.ChangeChannelSetting;
   channel: ResourceReference;
-  setting: ChannelSetting;
+  setting: Constants.ChannelSetting;
   value: string;
 }
 export interface ResolvedChangeChannelSettingAction {
-  action: Action.ChangeChannelSetting;
+  action: Constants.Action.ChangeChannelSetting;
   channel: ResolvedResourceReference;
-  setting: ChannelSetting;
+  setting: Constants.ChannelSetting;
   value: string;
 }
 
@@ -196,7 +133,7 @@ export interface ResolvedChangeChannelSettingAction {
  * Change an already existing permission override on a channel
  */
 export interface ChangePermissionOverrideAction {
-  action: Action.ChangePermissionOverrideOn;
+  action: Constants.Action.ChangePermissionOverrideOn;
   channel: ResourceReference;
   subject: ResourceReference;
   allow: number;
@@ -204,7 +141,7 @@ export interface ChangePermissionOverrideAction {
   deny: number;
 }
 export interface ResolvedChangePermissionOverrideAction {
-  action: Action.ChangePermissionOverrideOn;
+  action: Constants.Action.ChangePermissionOverrideOn;
   channel: ResolvedResourceReference;
   subject: ResolvedResourceReference;
   allow: number;
@@ -216,13 +153,13 @@ export interface ResolvedChangePermissionOverrideAction {
  * Change a role's assignment to users
  */
 export interface ChangeRoleAssignmentAction {
-  action: Action.ChangeRoleAssignment;
+  action: Constants.Action.ChangeRoleAssignment;
   role: ResourceReference;
   grant: ResourceReference[];
   revoke: ResourceReference[];
 }
 export interface ResolvedChangeRoleAssignmentAction {
-  action: Action.ChangeRoleAssignment;
+  action: Constants.Action.ChangeRoleAssignment;
   role: ResolvedResourceReference;
   grant: ResolvedResourceReference[];
   revoke: ResolvedResourceReference[];
@@ -232,13 +169,13 @@ export interface ResolvedChangeRoleAssignmentAction {
  * Change the permissions of a role
  */
 export interface ChangeRolePermissionsAction {
-  action: Action.ChangeRolePermissions;
+  action: Constants.Action.ChangeRolePermissions;
   role: ResourceReference;
   allow: number;
   deny: number;
 }
 export interface ResolvedChangeRolePermissionsAction {
-  action: Action.ChangeRolePermissions;
+  action: Constants.Action.ChangeRolePermissions;
   role: ResolvedResourceReference;
   allow: number;
   deny: number;
@@ -258,51 +195,51 @@ export type ResolvedChangeRoleSettingAction =
   | ResolvedChangeRoleMentionableAction
   | ResolvedChangeRoleHoistAction;
 interface ChangeRoleNameAction {
-  action: Action.ChangeRoleSetting;
+  action: Constants.Action.ChangeRoleSetting;
   role: ResourceReference;
-  setting: RoleSetting.Name;
+  setting: Constants.RoleSetting.Name;
   value: string;
 }
 interface ResolvedChangeRoleNameAction {
-  action: Action.ChangeRoleSetting;
+  action: Constants.Action.ChangeRoleSetting;
   role: ResolvedResourceReference;
-  setting: RoleSetting.Name;
+  setting: Constants.RoleSetting.Name;
   value: string;
 }
 interface ChangeRoleColorAction {
-  action: Action.ChangeRoleSetting;
+  action: Constants.Action.ChangeRoleSetting;
   role: ResourceReference;
-  setting: RoleSetting.Color;
+  setting: Constants.RoleSetting.Color;
   value: number;
 }
 interface ResolvedChangeRoleColorAction {
-  action: Action.ChangeRoleSetting;
+  action: Constants.Action.ChangeRoleSetting;
   role: ResolvedResourceReference;
-  setting: RoleSetting.Color;
+  setting: Constants.RoleSetting.Color;
   value: number;
 }
 interface ChangeRoleMentionableAction {
-  action: Action.ChangeRoleSetting;
+  action: Constants.Action.ChangeRoleSetting;
   role: ResourceReference;
-  setting: RoleSetting.Mentionable;
+  setting: Constants.RoleSetting.Mentionable;
   value: boolean;
 }
 interface ResolvedChangeRoleMentionableAction {
-  action: Action.ChangeRoleSetting;
+  action: Constants.Action.ChangeRoleSetting;
   role: ResolvedResourceReference;
-  setting: RoleSetting.Mentionable;
+  setting: Constants.RoleSetting.Mentionable;
   value: boolean;
 }
 interface ChangeRoleHoistAction {
-  action: Action.ChangeRoleSetting;
+  action: Constants.Action.ChangeRoleSetting;
   role: ResourceReference;
-  setting: RoleSetting.Hoist;
+  setting: Constants.RoleSetting.Hoist;
   value: boolean;
 }
 interface ResolvedChangeRoleHoistAction {
-  action: Action.ChangeRoleSetting;
+  action: Constants.Action.ChangeRoleSetting;
   role: ResolvedResourceReference;
-  setting: RoleSetting.Hoist;
+  setting: Constants.RoleSetting.Hoist;
   value: boolean;
 }
 
@@ -320,49 +257,49 @@ export type ResolvedChangeServerSettingAction =
   | ResolvedChangeServerNameAction
   | ResolvedChangeServerContentFilterAction;
 interface ChangeServerAFKChannelAction {
-  action: Action.ChangeServerSetting;
-  setting: ServerSetting.AFKChannel;
+  action: Constants.Action.ChangeServerSetting;
+  setting: Constants.ServerSetting.AFKChannel;
   value: ResourceReference;
 }
 interface ResolvedChangeServerAFKChannelAction {
-  action: Action.ChangeServerSetting;
-  setting: ServerSetting.AFKChannel;
+  action: Constants.Action.ChangeServerSetting;
+  setting: Constants.ServerSetting.AFKChannel;
   value: ResolvedResourceReference;
 }
 interface ChangeServerAFKTimeoutAction {
-  action: Action.ChangeServerSetting;
-  setting: ServerSetting.AFKTimeout;
+  action: Constants.Action.ChangeServerSetting;
+  setting: Constants.ServerSetting.AFKTimeout;
   /**
    * Timeout in seconds.  Will be rounded to values Discord finds acceptable.
    */
   value: number;
 }
 interface ResolvedChangeServerAFKTimeoutAction {
-  action: Action.ChangeServerSetting;
-  setting: ServerSetting.AFKTimeout;
+  action: Constants.Action.ChangeServerSetting;
+  setting: Constants.ServerSetting.AFKTimeout;
   /**
    * Timeout in seconds.  Will be rounded to values Discord finds acceptable.
    */
   value: number;
 }
 interface ChangeServerNameAction {
-  action: Action.ChangeServerSetting;
-  setting: ServerSetting.Name;
+  action: Constants.Action.ChangeServerSetting;
+  setting: Constants.ServerSetting.Name;
   value: string;
 }
 interface ResolvedChangeServerNameAction {
-  action: Action.ChangeServerSetting;
-  setting: ServerSetting.Name;
+  action: Constants.Action.ChangeServerSetting;
+  setting: Constants.ServerSetting.Name;
   value: string;
 }
 interface ChangeServerContentFilterAction {
-  action: Action.ChangeServerSetting;
-  setting: ServerSetting.ContentFilter;
+  action: Constants.Action.ChangeServerSetting;
+  setting: Constants.ServerSetting.ContentFilter;
   value: boolean;
 }
 interface ResolvedChangeServerContentFilterAction {
-  action: Action.ChangeServerSetting;
-  setting: ServerSetting.ContentFilter;
+  action: Constants.Action.ChangeServerSetting;
+  setting: Constants.ServerSetting.ContentFilter;
   value: boolean;
 }
 
@@ -370,25 +307,25 @@ interface ResolvedChangeServerContentFilterAction {
  * Creates a channel
  */
 export interface CreateChannelAction {
-  action: Action.CreateChannel;
+  action: Constants.Action.CreateChannel;
   name: string;
-  type: ChannelType;
+  type: Constants.ChannelType;
 }
 export interface ResolvedCreateChannelAction {
-  action: Action.CreateChannel;
+  action: Constants.Action.CreateChannel;
   name: string;
-  type: ChannelType;
+  type: Constants.ChannelType;
 }
 
 /**
  * Creates a role
  */
 export interface CreateRoleAction {
-  action: Action.CreateRole;
+  action: Constants.Action.CreateRole;
   name: string;
 }
 export interface ResolvedCreateRoleAction {
-  action: Action.CreateRole;
+  action: Constants.Action.CreateRole;
   name: string;
 }
 
@@ -396,11 +333,11 @@ export interface ResolvedCreateRoleAction {
  * Destroys a channel
  */
 export interface DestroyChannelAction {
-  action: Action.DestroyChannel;
+  action: Constants.Action.DestroyChannel;
   channel: ResourceReference;
 }
 export interface ResolvedDestroyChannelAction {
-  action: Action.DestroyChannel;
+  action: Constants.Action.DestroyChannel;
   channel: ResolvedResourceReference;
 }
 
@@ -408,11 +345,11 @@ export interface ResolvedDestroyChannelAction {
  * Destroys a role
  */
 export interface DestroyRoleAction {
-  action: Action.DestroyRole;
+  action: Constants.Action.DestroyRole;
   role: ResourceReference;
 }
 export interface ResolvedDestroyRoleAction {
-  action: Action.DestroyRole;
+  action: Constants.Action.DestroyRole;
   role: ResolvedResourceReference;
 }
 
@@ -420,11 +357,11 @@ export interface ResolvedDestroyRoleAction {
  * Kicks a user
  */
 export interface KickAction {
-  action: Action.Kick;
+  action: Constants.Action.Kick;
   user: ResourceReference;
 }
 export interface ResolvedKickAction {
-  action: Action.Kick;
+  action: Constants.Action.Kick;
   user: ResolvedResourceReference;
 }
 
@@ -432,15 +369,15 @@ export interface ResolvedKickAction {
  * Moves a channel above or below a subject channel
  */
 export interface MoveChannelAction {
-  action: Action.MoveChannel;
+  action: Constants.Action.MoveChannel;
   channel: ResourceReference;
-  direction: MoveRelativePosition;
+  direction: Constants.MoveRelativePosition;
   subject: ResourceReference;
 }
 export interface ResolvedMoveChannelAction {
-  action: Action.MoveChannel;
+  action: Constants.Action.MoveChannel;
   channel: ResolvedResourceReference;
-  direction: MoveRelativePosition;
+  direction: Constants.MoveRelativePosition;
   subject: ResolvedResourceReference;
 }
 
@@ -449,15 +386,15 @@ export interface ResolvedMoveChannelAction {
  * Moves a role above or below a subject channel
  */
 export interface MoveRoleAction {
-  action: Action.MoveRole;
+  action: Constants.Action.MoveRole;
   role: ResourceReference;
-  direction: MoveRelativePosition;
+  direction: Constants.MoveRelativePosition;
   subject: ResourceReference;
 }
 export interface ResolvedMoveRoleAction {
-  action: Action.MoveRole;
+  action: Constants.Action.MoveRole;
   role: ResolvedResourceReference;
-  direction: MoveRelativePosition;
+  direction: Constants.MoveRelativePosition;
   subject: ResolvedResourceReference;
 }
 
@@ -465,12 +402,12 @@ export interface ResolvedMoveRoleAction {
  * Removes a permission override from a channel for a subject role or user
  */
 export interface RemovePermissionOverrideAction {
-  action: Action.RemovePermissionOverrideOn;
+  action: Constants.Action.RemovePermissionOverrideOn;
   channel: ResourceReference;
   subject: ResourceReference;
 }
 export interface ResolvedRemovePermissionOverrideAction {
-  action: Action.RemovePermissionOverrideOn;
+  action: Constants.Action.RemovePermissionOverrideOn;
   channel: ResolvedResourceReference;
   subject: ResolvedResourceReference;
 }
@@ -479,12 +416,12 @@ export interface ResolvedRemovePermissionOverrideAction {
  * Sets the category of a channel
  */
 export interface SetCategoryAction {
-  action: Action.SetCategory;
+  action: Constants.Action.SetCategory;
   channel: ResourceReference;
   category: ResourceReference;
 }
 export interface ResolvedSetCategoryAction {
-  action: Action.SetCategory;
+  action: Constants.Action.SetCategory;
   channel: ResolvedResourceReference;
   category: ResolvedResourceReference;
 }
@@ -493,50 +430,19 @@ export interface ResolvedSetCategoryAction {
  * Syncs a channel's permissions to it's category
  */
 export interface SyncToCategoryAction {
-  action: Action.SyncToCategory;
+  action: Constants.Action.SyncToCategory;
   channel: ResourceReference;
 }
 export interface ResolvedSyncToCategoryAction {
-  action: Action.SyncToCategory;
+  action: Constants.Action.SyncToCategory;
   channel: ResolvedResourceReference;
-}
-
-
-/**
- * Different states a proposal can be in
- */
-export enum ProposalStatus {
-  /**
-   * Proposal still being modified, actions still being added
-   */
-  Building,
-  /**
-   * Proposal can be voted on, no more changes
-   */
-  Running,
-  /**
-   * Proposal not votable, not editable
-   * */
-  Cancelled,
-  /**
-   * Proposal passed and executed successfully
-   */
-  Passed,
-  /**
-   * Proposal failed and did not execute
-   */
-  Failed,
-  /**
-   * Proposal passed and failed to execute
-   */
-  ExecutionError,
 }
 
 export interface Proposal {
   /**
    * Author ID
    */
-  author: string;
+  author: IDResourceReference;
   /**
    * ID
    */
@@ -564,12 +470,21 @@ export interface Proposal {
   /**
    * Current status of the proposal
    */
-  status: ProposalStatus;
+  status: Constants.ProposalStatus;
   /**
    * Server the proposal applies to
    */
-  server: string;
+  server: IDResourceReference;
+  /**
+   * Current vote tally
+   */
+  votes: Votes;
 }
+
+export type ResolvedProposal = Util.Modify<Proposal, {
+  author: ResolvedResourceReference;
+  server: ResolvedResourceReference;
+}>;
 
 export interface NewProposalRequest {
   /**
@@ -594,22 +509,13 @@ export interface NewProposalRequest {
   actions: tAction[];
 }
 
-export enum Vote {
-  Yes,
-  No,
-  /**
-   * For use in quorum requirements
-   */
-  Abstain,
-}
-
 /**
  * Container to hold votes
  */
 export interface Votes {
-  [Vote.Yes]: number;
-  [Vote.No]: number;
-  [Vote.Abstain]: number;
+  [Constants.Vote.Yes]: number;
+  [Constants.Vote.No]: number;
+  [Constants.Vote.Abstain]: number;
 }
 
 /**
@@ -624,7 +530,7 @@ export interface Server {
 export interface Channel {
   id: string;
   name: string;
-  type: ChannelType;
+  type: Constants.ChannelType;
 }
 
 export interface Role {

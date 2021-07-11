@@ -13,7 +13,8 @@
             v-for="proposal in recentProposals"
             class="my-6"
             :key="proposal.id"
-            :proposal="proposal"
+            :proposalID="proposal.id"
+            :serverID="proposal.server.original.id"
             v-else
           />
         </v-col>
@@ -28,10 +29,16 @@
             v-for="proposal in closingProposals"
             class="my-6"
             :key="proposal.id"
-            :proposal="proposal"
+            :proposalID="proposal.id"
+            :serverID="proposal.server.original.id"
             v-else
           />
         </v-col>
+      </v-row>
+      <v-row justify="center">
+        <v-btn large elevation="0" :to="`${serverID}/proposals`">
+          View all →
+        </v-btn>
       </v-row>
     </v-container>
   </v-main>

@@ -1,9 +1,6 @@
-// The client doesn't need to be logged in
-
 import { Client } from 'discord.js';
-import { Proposal, ProposalStatus } from 'athena-common';
+import { Proposal, ProposalStatus, Vote } from 'athena-common';
 import { getProposal, setProposalStatus } from '@/proposal/db';
-import { countVotes, Vote } from '@/proposal/vote';
 import { getActions, executeActions, validateActions } from '@/action';
 
 import logger from '@/logging';
@@ -40,7 +37,7 @@ export async function handleProposalExpire(
 
   // Tally votes, execute actions if it passes
   const proposal = await getProposal(id);
-  const votes = await countVotes(id);
+  const votes = proposal.votes;
   if (votes[Vote.Yes] > votes[Vote.No]) {
     // Pass, run actions
     logger.info(
@@ -49,7 +46,7 @@ export async function handleProposalExpire(
     );
     const actions = await getActions(id);
     const actionsValidation = await validateActions(
-      client.guilds.resolve(proposal.server),
+      client.guilds.resolve(proposal.server.id),
       actions
     );
     if (!actionsValidation.valid) {
@@ -61,7 +58,7 @@ export async function handleProposalExpire(
     } else {
       proposal.status = ProposalStatus.Passed;
       try {
-        await executeActions(client.guilds.resolve(proposal.server), actions);
+        await executeActions(client.guilds.resolve(proposal.server.id), actions);
       } catch (e) {
         proposal.status = ProposalStatus.ExecutionError;
         logger.info(`Proposal execution error: `, e);

@@ -35,7 +35,7 @@ import serverHandler from "./server";
 router.use("/server", serverHandler);
 
 // Error handling
-router.use(function (err: any, req: Request, res: Response, next: NextFunction) {
+router.use(function (err: any, _0: Request, res: Response, _1: NextFunction) {
   logger.info(`[API] ${err.status || 500} : ${err.message}`);
   res.status(err.status || 500).json({ error: err.message });
 })

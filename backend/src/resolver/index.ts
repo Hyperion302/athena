@@ -1,5 +1,6 @@
 import { 
   Guild,
+  Client,
 } from "discord.js";
 import {
   ResourceReference,
@@ -8,32 +9,46 @@ import {
   tAction,
   tResolvedAction,
   Action,
+  Proposal,
+  ResolvedProposal,
 } from "athena-common";
 
 import { ActionSyntaxError } from "@/errors";
-import { resolvers } from "./actions";
-import {archiveName, checkArchive} from "./db";
+import { Actions } from "@/action";
+import { archiveName, checkArchive } from "./db";
+import { client } from "@/client";
 
 export type ResolutionList = string[];
 
-export function nameToRef(name: string): ResolvedResourceReference {
-  return { type: ReferenceType.Resolved, name };
+function nameToRef(name: string, ref: ResourceReference): ResolvedResourceReference {
+  return { type: ReferenceType.Resolved, name, original: ref };
+}
+
+export async function resolveServerReference(
+  client: Client,
+  ref: ResourceReference
+): Promise<ResolvedResourceReference> {
+  if (ref.type === ReferenceType.ID) {
+    const guild = await client.guilds.fetch(ref.id);
+    return nameToRef(guild.name, ref);
+  }
+  throw new ActionSyntaxError(`Unknown server reference type ${ref.type}`);
 }
 
 export async function resolveUserReference(
   server: Guild,
   ref: ResourceReference
-): Promise<string> {
+): Promise<ResolvedResourceReference> {
   if (ref.type == ReferenceType.ID) {
     const user = await server.members.fetch(ref.id);
     if (user) {
       const name = `${user.user.username}#${user.user.discriminator}`
       await archiveName(user.id, name);
-      return name;
+      return nameToRef(name, ref);
     } else {
       const result = await checkArchive(ref.id)
       if (result === null) throw new ActionSyntaxError(`Null user reference ${ref.id}`);
-      return result.name;
+      return nameToRef(result.name, ref);
     }
   }
   throw new ActionSyntaxError(`Unknown user reference type ${ref.type}`);
@@ -43,16 +58,16 @@ export async function resolveChannelReference(
   server: Guild,
   resList: ResolutionList,
   ref: ResourceReference
-): Promise<string> {
+): Promise<ResolvedResourceReference> {
   if (ref.type == ReferenceType.ID) {
     const channel = server.channels.resolve(ref.id);
     if (channel) {
       await archiveName(channel.id, channel.name);
-      return channel.name;
+      return nameToRef(channel.name, ref);
     } else {
       const result = await checkArchive(ref.id)
       if (result === null) throw new ActionSyntaxError(`Null channel reference ${ref.id}`);
-      return result.name;
+      return nameToRef(result.name, ref);
     }
   }
   if (ref.type == ReferenceType.Pointer) {
@@ -60,7 +75,7 @@ export async function resolveChannelReference(
     if (channel === undefined) {
       throw new ActionSyntaxError(`Null channel pointer ${ref.index}`);
     }
-    return channel;
+    return nameToRef(channel, ref);
   }
   throw new ActionSyntaxError(`Unknown channel reference type ${ref.type}`);
 }
@@ -69,16 +84,16 @@ export async function resolveRoleReference(
   server: Guild,
   resList: ResolutionList,
   ref: ResourceReference
-): Promise<string> {
+): Promise<ResolvedResourceReference> {
   if (ref.type == ReferenceType.ID) {
     const role = await server.roles.fetch(ref.id);
     if (role) {
       await archiveName(role.id, role.name);
-      return role.name;
+      return nameToRef(role.name, ref);
     } else {
       const result = await checkArchive(ref.id)
       if (result === null) throw new ActionSyntaxError(`Null role reference ${ref.id}`);
-      return result.name;
+      return nameToRef(result.name, ref);
     }
   }
   if (ref.type == ReferenceType.Pointer) {
@@ -86,7 +101,7 @@ export async function resolveRoleReference(
     if (role === undefined) {
       throw new ActionSyntaxError(`Null pointer ${ref.index}`);
     }
-    return role;
+    return nameToRef(role, ref);
   }
   throw new ActionSyntaxError(`Unknown role reference type ${ref.type}`);
 }
@@ -95,7 +110,7 @@ export async function resolveUserOrRoleReference(
   server: Guild,
   resList: ResolutionList,
   ref: ResourceReference
-): Promise<string> {
+): Promise<ResolvedResourceReference> {
   if (ref.type == ReferenceType.ID) {
     try {
       return await resolveRoleReference(server, resList, ref)
@@ -112,7 +127,7 @@ export async function resolveUserOrRoleReference(
     if (role === undefined) {
       throw new ActionSyntaxError(`Null role pointer ${ref.index}`);
     }
-    return role;
+    return nameToRef(role, ref);
   }
 }
 
@@ -126,7 +141,7 @@ export async function resolveActions(
   // For loop for the same reason as in executeActions
   for (let i = 0; i < actions.length; i++) {
     const action = actions[i];
-    const resolver = resolvers[action.action];
+    const resolver = Actions.resolvers[action.action];
     const resolvedAction = await resolver(server, action, resList);
     resolved.push(resolvedAction);
     if (
@@ -136,4 +151,22 @@ export async function resolveActions(
   }
 
   return resolved;
+}
+
+export async function resolveProposal(
+  server: Guild,
+  proposal: Proposal
+): Promise<ResolvedProposal> {
+  return {
+    ...proposal,
+    author: await resolveUserReference(server, proposal.author),
+    server: await resolveServerReference(client, proposal.server)
+  }
+}
+
+export async function resolveProposals(
+  server: Guild,
+  proposals: Proposal[]
+): Promise<ResolvedProposal[]> {
+  return await Promise.all(proposals.map(p => resolveProposal(server, p)));
 }

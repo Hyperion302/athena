@@ -1,17 +1,16 @@
 import express from "express";
-import { addVote, countVotes, getProposal } from "@/proposal";
+import { addVote, myVote, getProposal } from "@/proposal";
 import { Vote } from "athena-common";
 import { Request, Response, NextFunction } from "express";
-import {myVote} from "@/proposal/vote/db";
-import {getActions} from "@/action";
-import {resolveActions} from "@/action/resolver";
-import logger from "@/logging";
+import { getActions } from "@/action";
+import { resolveActions, resolveProposal } from "@/resolver";
 
 async function proposalLookupMiddleware (req: Request, res: Response, next: NextFunction) {
   const proposalID = req.params.proposal;
   try {
     const proposal = await getProposal(proposalID);
-    res.locals.proposal = proposal;
+    const resolvedProposal = await resolveProposal(res.locals.server, proposal);
+    res.locals.proposal = resolvedProposal;
   } catch (ResourceNotFoundError) {
     return next({ status: 404, message: `Proposal ${proposalID} not found` });
   }
@@ -19,18 +18,12 @@ async function proposalLookupMiddleware (req: Request, res: Response, next: Next
 }
 
 // GET /server/:server/proposal/:proposal
-async function rootGetHandler (req: Request, res: Response, next: NextFunction) {
+async function rootGetHandler (_0: Request, res: Response, _1: NextFunction) {
   res.status(200).json(res.locals.proposal);
 }
 // DELETE /server/:server/proposal/:proposal
-async function rootDeleteHandler (req: Request, res: Response, next: NextFunction) {
+async function rootDeleteHandler (_0: Request, _1: Response, next: NextFunction) {
   next({ status: 404, message: "Not implemented" });
-}
-// GET /server/:server/proposal/:proposal/votes
-async function votesHandler (req: Request, res: Response, next: NextFunction) {
-  const proposalID = req.params.proposal;
-  const votes = await countVotes(proposalID);
-  res.status(200).json(votes);
 }
 // POST /server/:server/proposal/:proposal/vote
 async function votePostHandler (req: Request, res: Response, next: NextFunction) {
@@ -46,7 +39,7 @@ async function votePostHandler (req: Request, res: Response, next: NextFunction)
     return next({ status: 400, message: "Invalid vote" });
   }
   await addVote(proposalID, userID, vote);
-  const newTally = await countVotes(proposalID);
+  const { votes: newTally } = await getProposal(proposalID);
   res.status(200).json(newTally);
 }
 // GET /server/:server/proposal/:proposal/vote
@@ -82,7 +75,6 @@ router.get("/", rootGetHandler);
 router.delete("/", rootDeleteHandler);
 router.get("/vote", voteGetHandler);
 router.post("/vote", votePostHandler);
-router.get("/votes", votesHandler);
 router.get("/actions", actionsHandler);
 
 export default router;

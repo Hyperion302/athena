@@ -56,12 +56,6 @@ Get :proposal
 
 Caller must be a member of :server
 
-### GET /server/:server/proposal/:proposal/votes
-
-Get all votes for :proposal
-
-Caller must be a member of :server
-
 ### GET /server/:server/proposal/:proposal/vote
 
 Get callers vote for :proposal, null if not voted
