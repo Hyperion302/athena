@@ -1,6 +1,6 @@
 import { Guild } from 'discord.js';
 import { ActionValidationResult } from '@/action';
-import { ResolvedChangeRoleAssignmentAction, ChangeRoleAssignmentAction, ReferenceType } from "athena-common";
+import { ResolvedChangeRoleAssignmentAction, ChangeRoleAssignmentAction, ReferenceType, ACTION_MIN_USERS, ACTION_MAX_USERS } from "athena-common";
 import {
   decacheRoleReference,
   decacheUserReference,
@@ -17,6 +17,12 @@ export async function validateChangeRoleAssignmentAction(
   guild: Guild,
   action: ChangeRoleAssignmentAction
 ): Promise<ActionValidationResult> {
+  if (
+    action.grant.length < ACTION_MIN_USERS
+    || action.grant.length > ACTION_MAX_USERS
+    || action.revoke.length < ACTION_MIN_USERS
+    || action.revoke.length > ACTION_MAX_USERS
+  ) return { valid: false, referenceValidations: [] }
   const roleValidation = await validateRoleReference(guild, action.role);
   const grantValidation = await Promise.all(
     action.grant.map((grant) => validateUserReference(guild, grant))

@@ -5,6 +5,11 @@ export const PROPOSAL_DESCRIPTION_MIN = 0;
 export const PROPOSAL_DESCRIPTION_MAX = 1024;
 export const PROPOSAL_DURATION_MIN = 0;
 export const PROPOSAL_DURATION_MAX = 60 * 60 * 24 * 2; // 2 Days
+export const PROPOSAL_MIN_ACTIONS = 0;
+export const PROPOSAL_MAX_ACTIONS = 100;
+// Action
+export const ACTION_MIN_USERS = 0;
+export const ACTION_MAX_USERS = 50;
 // Server
 export const SERVER_NAME_MAX = 100;
 export const SERVER_NAME_MIN = 2;

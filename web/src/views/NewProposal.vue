@@ -14,7 +14,7 @@
       </v-col>
      </v-row>
      <v-form
-      v-model="valid"
+      v-model="formValid"
      >
       <v-row justify="center">
         <v-col :cols="$vuetify.breakpoint.smAndDown ? 10 : 4">
@@ -152,12 +152,14 @@
                     v-model="action.grant"
                     label="Who to add to the role"
                     :server="selectedServer"
+                    :rules="[rules.actionUserMin, rules.actionUserMax]"
                     multiple
                   />
                   <member-dropdown
                     v-model="action.revoke"
                     label="Who to remove from the role"
                     :server="selectedServer"
+                    :rules="[rules.actionUserMin, rules.actionUserMax]"
                     multiple
                   />
                 </v-expansion-panel-content>
@@ -645,7 +647,7 @@
         cols="1"
       >
         <v-btn
-          :disabled="!(valid && durationValid)"
+          :disabled="!valid"
           @click="create()"
           class="my-8"
           color="#0039cb"
@@ -681,7 +683,11 @@ import {
   PROPOSAL_NAME_MIN,
   PROPOSAL_NAME_MAX,
   PROPOSAL_DESCRIPTION_MIN,
-  PROPOSAL_DESCRIPTION_MAX
+  PROPOSAL_DESCRIPTION_MAX,
+  PROPOSAL_MIN_ACTIONS,
+  PROPOSAL_MAX_ACTIONS,
+  ACTION_MIN_USERS,
+  ACTION_MAX_USERS
 } from "athena-common";
 import { getChannels, getRoles } from "@/services/discord";
 import { createProposal } from "@/services/proposals";
@@ -690,6 +696,7 @@ import RoleDropdown from "@/components/RoleDropdown.vue";
 import ChannelDropdown from "@/components/ChannelDropdown.vue";
 import PermissionDropdown from "@/components/PermissionDropdown.vue";
 import SettingDropdown from "@/components/SettingDropdown.vue";
+import { User } from "@/models/user";
 
 export default Vue.extend({
   components: {
@@ -705,7 +712,7 @@ export default Vue.extend({
     durationSeconds: "0",
     durationMinutes: "0",
     durationHours: "0",
-    valid: false,
+    formValid: false,
     rules: {
       required: (value: string): boolean | string => !!value || 'Required',
       nonNegative: (value: string): boolean | string => parseInt(value) >= 0 || 'Must be positive',
@@ -721,6 +728,8 @@ export default Vue.extend({
       roleNameMax: (value: string): boolean | string => value.length <= ROLE_NAME_MAX || `Max ${ROLE_NAME_MAX} characters`,
       serverNameMin: (value: string): boolean | string => value.length >= SERVER_NAME_MIN || `Min ${SERVER_NAME_MIN} characters`,
       serverNameMax: (value: string): boolean | string => value.length <= SERVER_NAME_MAX || `Max ${SERVER_NAME_MAX} chracters`,
+      actionUserMin: (value: User[]): boolean | string => value.length >= ACTION_MIN_USERS || `Min ${ACTION_MIN_USERS} users`,
+      actionUserMax: (value: User[]): boolean | string => value.length <= ACTION_MAX_USERS || `Max ${ACTION_MAX_USERS} users`
     },
     actionTypeDialog: false,
     newActionType: <Action>null,
@@ -749,7 +758,13 @@ export default Vue.extend({
     ...mapGetters("auth", [
       "token"
     ]),
-    durationValid() { return parseInt(this.durationSeconds) + parseInt(this.durationMinutes) + parseInt(this.durationHours) > 0; },
+    valid() {
+      const form = this.formValid;
+      const duration = parseInt(this.durationSeconds) + parseInt(this.durationMinutes) + parseInt(this.durationHours) > 0;
+      if (this.actions[this.selectedServer] === undefined) return false;
+      const actionCount = this.actions[this.selectedServer].length >= PROPOSAL_MIN_ACTIONS && this.actions[this.selectedServer].length <= PROPOSAL_MAX_ACTIONS;
+      return form && duration && actionCount;
+    },
     servers() { return Object.values(this.serversObject); },
     derefChannels() {
       const originalChannels = this.channels[this.selectedServer];

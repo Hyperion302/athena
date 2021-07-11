@@ -10,6 +10,8 @@ import {
   PROPOSAL_DURATION_MAX,
   PROPOSAL_DESCRIPTION_MAX,
   PROPOSAL_DESCRIPTION_MIN,
+  PROPOSAL_MIN_ACTIONS,
+  PROPOSAL_MAX_ACTIONS,
   NewProposalRequest,
 } from "athena-common";
 import { client } from "@/client";
@@ -78,6 +80,10 @@ async function rootPostHandler (req: Request, res: Response, next: NextFunction)
     actions === undefined
     || !Array.isArray(actions)
   ) return next({ status: 400, message: "Missing actions list"});
+  if (
+    actions.length < PROPOSAL_MIN_ACTIONS
+    || actions.length > PROPOSAL_MAX_ACTIONS
+  ) return next({ status: 400, message: "Invalid number of actions" });
   const validationResult = await validateActions(server, actions);
   if (!validationResult.valid) return next({ status: 400, message: "An action is invalid" });
 
