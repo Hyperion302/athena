@@ -2,7 +2,7 @@ import { Channel, Guild, Role } from 'discord.js';
 import { Action, tAction, tResolvedAction } from "athena-common";
 import { ResourceList } from '@/action/executor';
 import { ActionValidationResult } from '@/action/validator';
-import { ResolutionList } from '../resolver';
+import { ResolutionList } from '@/resolver';
 import {
   executeBanAction,
   validateBanAction,

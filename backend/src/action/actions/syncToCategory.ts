@@ -1,8 +1,8 @@
 import { Guild } from 'discord.js';
-import { ReferenceType, ResolvedSyncToCategoryAction, SyncToCategoryAction } from "athena-common";
+import { ResolvedSyncToCategoryAction, SyncToCategoryAction } from "athena-common";
 import { decacheChannelReference, ResourceList } from '@/action/executor';
 import { ActionValidationResult, validateChannelReference } from '@/action/validator';
-import {nameToRef, ResolutionList, resolveChannelReference} from '../resolver';
+import { ResolutionList, resolveChannelReference} from '@/resolver';
 
 export async function validateSyncToCategoryAction(
   guild: Guild,
@@ -21,7 +21,7 @@ export async function resolveSyncToCategoryAction(
 ): Promise<ResolvedSyncToCategoryAction> {
   return {
     ...action,
-    channel: nameToRef(await resolveChannelReference(guild, resList, action.channel))
+    channel: await resolveChannelReference(guild, resList, action.channel)
   };
 }
 export async function executeSyncToCategoryAction(

@@ -1,8 +1,8 @@
 import { Guild } from 'discord.js';
-import { KickAction, ReferenceType, ResolvedKickAction } from "athena-common";
+import { KickAction, ResolvedKickAction } from "athena-common";
 import { decacheUserReference } from '@/action/executor';
 import { ActionValidationResult, validateUserReference } from '@/action/validator';
-import {nameToRef, resolveUserReference} from '../resolver';
+import { resolveUserReference } from '@/resolver';
 
 export async function validateKickAction(
   guild: Guild,
@@ -20,7 +20,7 @@ export async function resolveKickAction(
 ): Promise<ResolvedKickAction> {
   return {
     ...action,
-    user: nameToRef(await resolveUserReference(guild, action.user))
+    user: await resolveUserReference(guild, action.user)
   };
 }
 export async function executeKickAction(guild: Guild, action: KickAction) {

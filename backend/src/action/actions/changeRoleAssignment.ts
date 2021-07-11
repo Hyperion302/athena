@@ -9,10 +9,9 @@ import {
 import { validateRoleReference, validateUserReference } from '@/action/validator';
 import {
   ResolutionList,
-  nameToRef,
   resolveUserReference,
   resolveRoleReference
-} from '@/action/resolver';
+} from '@/resolver';
 
 export async function validateChangeRoleAssignmentAction(
   guild: Guild,
@@ -44,9 +43,9 @@ export async function resolveChangeRoleAssignmentAction(
   );
   return {
     ...action,
-    grant: grant.map(nameToRef),
-    revoke: revoke.map(nameToRef),
-    role: nameToRef(await resolveRoleReference(guild, resList, action.role))
+    grant,
+    revoke,
+    role: await resolveRoleReference(guild, resList, action.role)
   }
 }
 export async function executeChangeRoleAssignmentAction(

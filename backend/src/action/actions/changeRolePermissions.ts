@@ -1,8 +1,8 @@
 import { Guild } from 'discord.js';
-import { ChangeRolePermissionsAction, ReferenceType, ResolvedChangeRolePermissionsAction } from "athena-common";
+import { ChangeRolePermissionsAction, ResolvedChangeRolePermissionsAction } from "athena-common";
 import { decacheRoleReference, ResourceList } from '@/action/executor';
 import { ActionValidationResult, validateRoleReference } from '@/action/validator';
-import { nameToRef, ResolutionList, resolveRoleReference } from '@/action/resolver';
+import { ResolutionList, resolveRoleReference } from '@/resolver';
 
 export async function validateChangeRolePermissionsAction(
   guild: Guild,
@@ -21,7 +21,7 @@ export async function resolveChangeRolePermissionsAction(
 ): Promise<ResolvedChangeRolePermissionsAction> {
   return {
     ...action,
-    role: nameToRef(await resolveRoleReference(guild, resList, action.role))
+    role: await resolveRoleReference(guild, resList, action.role)
   };
 }
 export async function executeChangeRolePermissionsAction(

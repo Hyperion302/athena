@@ -1,5 +1,5 @@
-import { Guild, GuildMember, Role } from 'discord.js';
-import { ChangePermissionOverrideAction, ReferenceType, ResolvedChangePermissionOverrideAction } from "athena-common";
+import { Guild } from 'discord.js';
+import { ChangePermissionOverrideAction, ResolvedChangePermissionOverrideAction } from "athena-common";
 import {
   ResourceList,
   decacheChannelReference,
@@ -12,11 +12,10 @@ import {
   validateUserOrRoleReference,
 } from '@/action/validator';
 import {
-  nameToRef,
   ResolutionList,
   resolveChannelReference,
   resolveUserOrRoleReference
-} from '@/action/resolver';
+} from '@/resolver';
 
 export async function validateChangePermissionOverrideAction(
   guild: Guild,
@@ -39,8 +38,8 @@ export async function resolveChangePermissionOverrideAction(
 ): Promise<ResolvedChangePermissionOverrideAction> {
   return {
     ...action,
-    channel: nameToRef(await resolveChannelReference(guild, resList, action.channel)),
-    subject: nameToRef(await resolveUserOrRoleReference(guild, resList, action.subject)),
+    channel: await resolveChannelReference(guild, resList, action.channel),
+    subject: await resolveUserOrRoleReference(guild, resList, action.subject),
   };
 }
 export async function executeChangePermissionOverrideAction(

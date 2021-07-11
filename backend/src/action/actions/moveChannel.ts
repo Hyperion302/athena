@@ -1,8 +1,8 @@
 import { Guild } from 'discord.js';
-import { MoveChannelAction, MoveRelativePosition, ReferenceType, ResolvedMoveChannelAction } from "athena-common";
+import { MoveChannelAction, MoveRelativePosition, ResolvedMoveChannelAction } from "athena-common";
 import { decacheChannelReference, ResourceList } from '@/action/executor';
 import { ActionValidationResult, validateChannelReference } from '@/action/validator';
-import {nameToRef, ResolutionList, resolveChannelReference} from '../resolver';
+import { ResolutionList, resolveChannelReference} from '@/resolver';
 
 export async function validateMoveChannelAction(
   guild: Guild,
@@ -22,8 +22,8 @@ export async function resolveMoveChannelAction(
 ): Promise<ResolvedMoveChannelAction> {
   return {
     ...action,
-    channel: nameToRef(await resolveChannelReference(guild, resList, action.channel)),
-    subject: nameToRef(await resolveChannelReference(guild, resList, action.subject))
+    channel: await resolveChannelReference(guild, resList, action.channel),
+    subject: await resolveChannelReference(guild, resList, action.subject)
   };
 }
 export async function executeMoveChannelAction(

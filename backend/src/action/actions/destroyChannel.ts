@@ -1,8 +1,8 @@
 import { Guild } from 'discord.js';
-import { DestroyChannelAction, ReferenceType, ResolvedDestroyChannelAction } from "athena-common";
-import { decacheChannelReference, ResourceList } from '../executor';
-import { ActionValidationResult, validateChannelReference } from '../validator';
-import {nameToRef, ResolutionList, resolveChannelReference} from '../resolver';
+import { DestroyChannelAction, ResolvedDestroyChannelAction } from "athena-common";
+import { decacheChannelReference, ResourceList } from '@/action/executor';
+import { ActionValidationResult, validateChannelReference } from '@/action/validator';
+import { ResolutionList, resolveChannelReference } from '@/resolver';
 
 export async function validateDestroyChannelAction(
   guild: Guild,
@@ -21,7 +21,7 @@ export async function resolveDestroyChannelAction(
 ): Promise<ResolvedDestroyChannelAction> {
   return {
     ...action,
-    channel: nameToRef(await resolveChannelReference(guild, resList, action.channel))
+    channel: await resolveChannelReference(guild, resList, action.channel)
   };
 }
 export async function executeDestroyChannelAction(

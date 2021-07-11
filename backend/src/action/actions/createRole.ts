@@ -1,7 +1,6 @@
 import { Guild, Role } from 'discord.js';
 import { CreateRoleAction, ResolvedCreateRoleAction } from "athena-common";
-import { ActionValidationResult } from '../validator';
-import {ResolutionList} from '../resolver';
+import { ActionValidationResult } from '@/action/validator';
 
 export async function validateCreateRoleAction(
   guild: Guild,
@@ -11,8 +10,7 @@ export async function validateCreateRoleAction(
 }
 export async function resolveCreateRoleAction(
   guild: Guild,
-  action: CreateRoleAction,
-  resList: ResolutionList
+  action: CreateRoleAction
 ): Promise<ResolvedCreateRoleAction> { return action; }
 export async function executeCreateRoleAction(
   guild: Guild,

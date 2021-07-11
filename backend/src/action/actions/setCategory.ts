@@ -1,5 +1,5 @@
 import { CategoryChannel, Guild } from 'discord.js';
-import { ReferenceType, ResolvedSetCategoryAction, SetCategoryAction } from "athena-common";
+import { ResolvedSetCategoryAction, SetCategoryAction } from "athena-common";
 import { ExecutionError } from '@/errors';
 import { decacheChannelReference, ResourceList } from '@/action/executor';
 import {
@@ -7,7 +7,7 @@ import {
   validateCategoryReference,
   validateChannelReference,
 } from '@/action/validator';
-import {nameToRef, ResolutionList, resolveChannelReference} from '../resolver';
+import { ResolutionList, resolveChannelReference } from '@/resolver';
 
 export async function validateSetCategoryAction(
   guild: Guild,
@@ -30,8 +30,8 @@ export async function resolveSetCategoryAction(
 ): Promise<ResolvedSetCategoryAction> {
   return{
     ...action,
-    channel: nameToRef(await resolveChannelReference(guild, resList, action.channel)),
-    category: nameToRef(await resolveChannelReference(guild, resList, action.category))
+    channel: await resolveChannelReference(guild, resList, action.channel),
+    category: await resolveChannelReference(guild, resList, action.category)
   };
 }
 export async function executeSetCategoryAction(

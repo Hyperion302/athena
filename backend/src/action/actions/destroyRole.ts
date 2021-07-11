@@ -2,7 +2,7 @@ import { Guild } from 'discord.js';
 import { DestroyRoleAction, ReferenceType, ResolvedDestroyRoleAction } from "athena-common";
 import { ResourceList, decacheRoleReference } from '@/action/executor';
 import { ActionValidationResult, validateRoleReference } from '@/action/validator';
-import {nameToRef, ResolutionList, resolveRoleReference} from '../resolver';
+import { ResolutionList, resolveRoleReference} from '@/resolver';
 
 export async function validateDestroyRoleAction(
   guild: Guild,
@@ -21,7 +21,7 @@ export async function resolveDestroyRoleAction(
 ): Promise<ResolvedDestroyRoleAction> {
   return {
     ...action,
-    role: nameToRef(await resolveRoleReference(guild, resList, action.role))
+    role: await resolveRoleReference(guild, resList, action.role)
   }
 }
 export async function executeDestroyRoleAction(

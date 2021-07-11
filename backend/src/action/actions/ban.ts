@@ -1,8 +1,8 @@
 import { Guild } from 'discord.js';
-import { BanAction, ReferenceType, ResolvedBanAction } from "athena-common";
+import { BanAction, ResolvedBanAction } from "athena-common";
 import { decacheUserReference } from '@/action/executor';
 import { ActionValidationResult, validateUserReference } from '@/action/validator';
-import { nameToRef, ResolutionList, resolveUserReference } from '@/action/resolver';
+import { resolveUserReference } from '@/resolver';
 
 export async function validateBanAction(
   guild: Guild,
@@ -16,12 +16,11 @@ export async function validateBanAction(
 }
 export async function resolveBanAction(
   guild: Guild,
-  action: BanAction,
-  resList: ResolutionList
+  action: BanAction
 ): Promise<ResolvedBanAction> {
   return {
     ...action,
-    user: nameToRef(await resolveUserReference(guild, action.user))
+    user: await resolveUserReference(guild, action.user)
   }
 }
 export async function executeBanAction(guild: Guild, action: BanAction) {

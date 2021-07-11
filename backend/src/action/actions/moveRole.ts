@@ -1,8 +1,8 @@
 import { Guild } from 'discord.js';
-import { MoveRoleAction, MoveRelativePosition, ResolvedMoveRoleAction, ReferenceType } from "athena-common";
+import { MoveRoleAction, MoveRelativePosition, ResolvedMoveRoleAction } from "athena-common";
 import { decacheRoleReference, ResourceList } from '../executor';
 import { ActionValidationResult, validateRoleReference } from '../validator';
-import {nameToRef, ResolutionList, resolveRoleReference} from '../resolver';
+import { ResolutionList, resolveRoleReference} from '@/resolver';
 
 export async function validateMoveRoleAction(
   guild: Guild,
@@ -22,8 +22,8 @@ export async function resolveMoveRoleAction(
 ): Promise<ResolvedMoveRoleAction> {
   return {
     ...action,
-    role: nameToRef(await resolveRoleReference(guild, resList, action.role)),
-    subject: nameToRef(await resolveRoleReference(guild, resList, action.subject))
+    role: await resolveRoleReference(guild, resList, action.role),
+    subject: await resolveRoleReference(guild, resList, action.subject)
   };
 }
 export async function executeMoveRoleAction(

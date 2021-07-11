@@ -1,9 +1,9 @@
 import { Guild } from 'discord.js';
-import { ServerSetting, ChangeServerSettingAction, ReferenceType, ResolvedChangeServerSettingAction } from "athena-common";
+import { ServerSetting, ChangeServerSettingAction, ResolvedChangeServerSettingAction } from "athena-common";
 import { ExecutionError } from '@/errors';
 import { decacheChannelReference, ResourceList } from '@/action/executor';
 import { ActionValidationResult, validateChannelReference } from '@/action/validator';
-import { nameToRef, ResolutionList, resolveChannelReference } from '@/action/resolver';
+import { ResolutionList, resolveChannelReference } from '@/resolver';
 
 export async function validateChangeServerSettingAction(
   guild: Guild,
@@ -27,7 +27,7 @@ export async function resolveChangeServerSettingAction(
     case ServerSetting.AFKChannel:
       return {
         ...action,
-        value: nameToRef(await resolveChannelReference(guild, resList, action.value))
+        value: await resolveChannelReference(guild, resList, action.value)
       };
     default:
       return action;
