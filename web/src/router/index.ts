@@ -6,6 +6,7 @@ import Dashboard from "@/views/Dashboard.vue";
 import ServerView from "@/views/Server.vue";
 import ProposalView from "@/views/Proposal.vue";
 import NewProposal from "@/views/NewProposal.vue";
+import ProposalsView from "@/views/Proposals.vue";
 import store from "@/store";
 import generateState from "@/util/generateState";
 
@@ -57,6 +58,15 @@ const routes: RouteConfig[] = [
     path: "/newProposal",
     name: "NewProposal",
     component: NewProposal,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/servers/:server/proposals",
+    name: "Proposals",
+    component: ProposalsView,
+    props: (route) => ({
+      serverID: route.params.server,
+    }),
     meta: { requiresAuth: true },
   }
   // {

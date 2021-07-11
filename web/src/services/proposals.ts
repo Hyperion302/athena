@@ -18,7 +18,21 @@ function apiToObj(api: any): Proposal {
     author: api.author,
     createdOn: new Date(api.createdOn),
     expiresOn: api.expiresOn === null ? null : new Date(api.expiresOn),
+    votes: api.votes
   }
+}
+
+export async function getProposals(
+  server: string,
+  start: string | null,
+  token: string,
+): Promise<Proposal[]> {
+  const s = start === null ? "0" : start;
+  const results = await drkt.get(`server/${server}/proposal`, {
+    ...tokenOpts(token),
+    params: { c: 100, s }
+  });
+  return results.data.map(apiToObj);
 }
 
 export async function getRecentProposals(
