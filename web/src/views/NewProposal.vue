@@ -418,11 +418,24 @@
                     label="New name"
                     v-if="action.setting == ServerSetting.Name"
                   />
-                  <v-switch
+                  <v-radio-group
                     v-model="action.value"
-                    label="Enable content filter"
+                    :rules="[rules.defined]"
                     v-if="action.setting == ServerSetting.ContentFilter"
-                  />
+                  >
+                    <v-radio
+                      label="All Users"
+                      :value="ContentFilterLevel.All"
+                    />
+                    <v-radio
+                      label="Users with no role"
+                      :value="ContentFilterLevel.NoRole"
+                    />
+                    <v-radio
+                      label="Disabled"
+                      :value="ContentFilterLevel.Disabled"
+                    />
+                  </v-radio-group>
                 </v-expansion-panel-content>
               </template>
               <!-- ChangeChannelSetting -->
@@ -671,6 +684,7 @@ import {
   ServerSetting,
   ReferenceType,
   MoveRelativePosition,
+  ContentFilterLevel,
   NewProposalRequest,
   CHANNEL_NAME_MIN,
   CHANNEL_NAME_MAX,
@@ -715,6 +729,7 @@ export default Vue.extend({
     formValid: false,
     rules: {
       required: (value: string): boolean | string => !!value || 'Required',
+      defined: (value: string): boolean | string => value !== undefined || 'Required',
       nonNegative: (value: string): boolean | string => parseInt(value) >= 0 || 'Must be positive',
       proposalNameMin: (value: string): boolean | string => value.length >= PROPOSAL_NAME_MIN || `Min ${PROPOSAL_NAME_MIN} characters`,
       proposalNameMax: (value: string): boolean | string => value.length <= PROPOSAL_NAME_MAX || `Max ${PROPOSAL_NAME_MAX} characters`,
@@ -749,7 +764,8 @@ export default Vue.extend({
     RoleSetting,
     ChannelSetting,
     ServerSetting,
-    MoveRelativePosition
+    MoveRelativePosition,
+    ContentFilterLevel,
   }; },
   computed: {
     ...mapState("auth", {

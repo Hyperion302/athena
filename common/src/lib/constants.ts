@@ -70,6 +70,12 @@ export enum ChannelSetting {
   Topic,
 }
 
+export enum ContentFilterLevel {
+  Disabled,
+  NoRoles,
+  All
+}
+
 export enum MoveRelativePosition {
   Above,
   Below,

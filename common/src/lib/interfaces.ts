@@ -295,12 +295,12 @@ interface ResolvedChangeServerNameAction {
 interface ChangeServerContentFilterAction {
   action: Constants.Action.ChangeServerSetting;
   setting: Constants.ServerSetting.ContentFilter;
-  value: boolean;
+  value: Constants.ContentFilterLevel;
 }
 interface ResolvedChangeServerContentFilterAction {
   action: Constants.Action.ChangeServerSetting;
   setting: Constants.ServerSetting.ContentFilter;
-  value: boolean;
+  value: Constants.ContentFilterLevel;
 }
 
 /**

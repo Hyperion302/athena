@@ -1,5 +1,5 @@
-import { Guild } from 'discord.js';
-import { ServerSetting, ChangeServerSettingAction, ResolvedChangeServerSettingAction } from "athena-common";
+import { ExplicitContentFilterLevel, Guild } from 'discord.js';
+import { ServerSetting, ChangeServerSettingAction, ResolvedChangeServerSettingAction, ContentFilterLevel } from "athena-common";
 import { ExecutionError } from '@/errors';
 import { decacheChannelReference, ResourceList } from '@/action/executor';
 import { ActionValidationResult, validateChannelReference } from '@/action/validator';
@@ -33,6 +33,13 @@ export async function resolveChangeServerSettingAction(
       return action;
   }
 }
+
+const athenaToDjs: Record<ContentFilterLevel, ExplicitContentFilterLevel> = {
+  [ContentFilterLevel.All]: "ALL_MEMBERS",
+  [ContentFilterLevel.NoRoles]: "MEMBERS_WITHOUT_ROLES",
+  [ContentFilterLevel.Disabled]: "DISABLED"
+}
+
 export async function executeChangeServerSettingAction(
   guild: Guild,
   action: ChangeServerSettingAction,
@@ -55,9 +62,7 @@ export async function executeChangeServerSettingAction(
       await guild.setAFKTimeout(action.value);
       break;
     case ServerSetting.ContentFilter:
-      await guild.setExplicitContentFilter(
-        action.value ? 'ALL_MEMBERS' : 'DISABLED'
-      );
+      await guild.setExplicitContentFilter(athenaToDjs[action.value]);
       break;
     case ServerSetting.Name:
       await guild.setName(action.value);
