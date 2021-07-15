@@ -6,9 +6,7 @@
     "prebuild": "tslint -c tslint.json -p tsconfig.json --fix",
     "build": "ttsc",
     "start": "node -r dotenv/config ./dist/src/index.js",
-    "start:dev": "concurrently -n NODE,TSC \"nodemon -r dotenv/config ./dist/src/index.js\" \"ttsc -w\"",
-    "start:proxy": "cloud_sql_proxy -instances=direct-discord-democracy:us-central1:drkt-instance=tcp:3306 -credential_file=credentials.json",
-    "start:proxy:docker": "docker run -d -v $(pwd)/credentials.json:/credentials.json -p 127.0.0.1:3306:3306 gcr.io/cloudsql-docker/gce-proxy:1.16 /cloud_sql_proxy -instances=direct-discord-democracy:us-central1:drkt-instance=tcp:0.0.0.0:3306 -credential_file=/credentials.json"
+    "start:dev": "concurrently -n NODE,TSC \"nodemon -r dotenv/config ./dist/src/index.js\" \"ttsc -w\""
   },
   "author": "Joseph Shetaye",
   "license": "ISC",

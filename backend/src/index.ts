@@ -1,4 +1,4 @@
-import { connectToDevDB, connectToProdDB, runLatestMigration } from "@/db";
+import { mountDB, runLatestMigration } from "@/db";
 import { connectToDiscord, client } from "@/client";
 import { getHangingProposals, scheduleProposal } from "@/proposal";
 import { tCommand, parseCommand, executeCommand } from "@/command";
@@ -15,19 +15,9 @@ async function start() {
   if (!botToken) throw new InternalError("Invalid Bot Token");
 
   // Connect to DB
-  if (production) {
-    const SQLUser = process.env.SQL_USER;
-    if (!SQLUser) throw new InternalError("Invalid SQL User");
-    const SQLPass = process.env.SQL_PASS;
-    if (!SQLPass) throw new InternalError("Invalid SQL Pass");
-    const SQLDB = process.env.SQL_DB;
-    if (!SQLDB) throw new InternalError("Invalid SQL DB");
-    connectToProdDB(SQLUser, SQLPass, SQLDB);
-  } else {
-    const SQLPath = process.env.SQL_PATH;
-    if (!SQLPath) throw new InternalError("Invalid SQL Path");
-    connectToDevDB(SQLPath);
-  }
+  const SQLPath = process.env.SQL_PATH;
+  if (!SQLPath) throw new InternalError("Invalid SQL Path");
+  mountDB(SQLPath);
   // Run migrations if necessary
   if (process.env.MIGRATE) {
     await runLatestMigration();
