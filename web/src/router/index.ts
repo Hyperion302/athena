@@ -7,6 +7,7 @@ import ServerView from "@/views/Server.vue";
 import ProposalView from "@/views/Proposal.vue";
 import NewProposal from "@/views/NewProposal.vue";
 import ProposalsView from "@/views/Proposals.vue";
+import DocsView from "@/views/Docs.vue";
 import store from "@/store";
 import generateState from "@/util/generateState";
 
@@ -68,6 +69,12 @@ const routes: RouteConfig[] = [
       serverID: route.params.server,
     }),
     meta: { requiresAuth: true },
+  },
+  {
+    path: "/docs",
+    name: "Docs",
+    component: DocsView,
+    meta: { requiresAuth: false }
   }
   // {
   //  path: '/about',

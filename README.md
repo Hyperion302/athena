@@ -16,7 +16,7 @@ happy!
 
 ## Usage
 
-See [Help](https://athna.xyz/help)
+See [Help](https://athna.xyz/docs)
 
 ## What's Ahead
 
