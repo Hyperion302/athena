@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const drkt = axios.create({
-  baseURL: "http://athena.local:8081/api/v1/",
+  baseURL: `${process.env.VUE_APP_API_URL}/api/v1/`
 });
 
 export const discord = axios.create({

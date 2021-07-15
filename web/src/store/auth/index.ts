@@ -16,11 +16,8 @@ import { RootState } from '../types';
 
 // State
 
-const clientID = "757956158483857538";
-const redirect = process.env.NODE_ENV === "development"
-      ? "http://athena.local:8080/authRedirect"
-      : "";
-
+const clientID = process.env.VUE_APP_CLIENT_ID
+const redirect = `${process.env.VUE_APP_URL}/authRedirect`
 const state: AuthState = {
   loginURL: `https://discord.com/api/oauth2/authorize?client_id=${
     clientID
