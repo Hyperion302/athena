@@ -211,28 +211,36 @@
       ]
     },
     "exportedModulesMap": {
-      "./src/lib/interfaces.ts": [
-        "./src/lib/constants.ts",
-        "./src/lib/util.ts"
+      "./src/lib/serialize.ts": [
+        "./src/lib/interfaces.ts"
+      ],
+      "./src/lib/guards.ts": [
+        "./src/lib/interfaces.ts"
       ],
       "./src/index.ts": [
         "./src/lib/interfaces.ts",
         "./src/lib/constants.ts"
       ],
-      "./src/lib/guards.ts": [
-        "./src/lib/interfaces.ts"
-      ],
-      "./src/lib/serialize.ts": [
-        "./src/lib/interfaces.ts"
+      "./src/lib/interfaces.ts": [
+        "./src/lib/constants.ts",
+        "./src/lib/util.ts"
       ]
     },
     "semanticDiagnosticsPerFile": [
-      "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es5.d.ts",
+      "./src/lib/constants.ts",
+      "./src/lib/util.ts",
+      "./src/lib/interfaces.ts",
+      "./src/index.ts",
+      "./src/lib/deserialize.ts",
+      "./src/lib/guards.ts",
+      "./src/lib/permissions.ts",
+      "./src/lib/serialize.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2015.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2016.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2017.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2018.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2019.d.ts",
+      "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es5.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2015.core.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2015.collection.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2015.generator.d.ts",
@@ -259,15 +267,7 @@
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2019.symbol.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2020.string.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2020.symbol.wellknown.d.ts",
-      "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.esnext.bigint.d.ts",
-      "./src/lib/constants.ts",
-      "./src/lib/util.ts",
-      "./src/lib/deserialize.ts",
-      "./src/lib/permissions.ts",
-      "./src/lib/interfaces.ts",
-      "./src/lib/serialize.ts",
-      "./src/lib/guards.ts",
-      "./src/index.ts"
+      "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.esnext.bigint.d.ts"
     ]
   },
   "version": "3.6.3"
