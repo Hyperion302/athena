@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "outDir": "dist",
+    "baseUrl": "./src",
+    "paths": {
+        "@/*": [
+            "./*"
+        ]
+    },
+    "plugins": [
+      { "transform": "typescript-transform-paths" }
+    ]
+  },
+  "references": [{ "path" : "../common" }],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules/**/*"]
+}

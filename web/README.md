@@ -1,0 +1,9 @@
+# 1B86B4
+
+# 0039cb
+
+# 0E0E52
+
+# FFFFFF
+
+# EEEEEE

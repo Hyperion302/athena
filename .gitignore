@@ -3,3 +3,13 @@ node_modules/
 configuration.json
 credentials.json
 dist/
+.env
+.DS_Store
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+*.db

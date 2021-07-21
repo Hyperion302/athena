@@ -1,18 +1,55 @@
-FROM node:12
+FROM node:16-alpine
 
-WORKDIR /usr/src/app
+ENV HOME /usr/src/
+ENV DB /usr/db/
+WORKDIR $HOME
 
-COPY package*.json ./
-COPY ts*.json ./
-COPY src/ src/
-COPY configuration.json ./
-COPY credentials.json ./
+# Copy files needed for install
 
-RUN npm install
+COPY package.json $HOME
+COPY yarn.lock $HOME
+COPY .yarnrc.yml $HOME
+# Needed because .yarnrc.yml points to a release file
+COPY .yarn $HOME/.yarn/
+COPY common/package.json $HOME/common/
+COPY backend/package.json $HOME/backend/
 
-RUN npm run build
+# Install deps
+
+RUN yarn
+
+# Copy the rest
+
+COPY . $HOME
+
+# Build common
+
+WORKDIR $HOME/common
+RUN yarn tsc
+
+# Build backend
+
+WORKDIR $HOME/backend
+RUN yarn build
+
+# API port
+
+EXPOSE 8081
+
+# Public vars
 
 ENV NODE_ENV production
-ENV GOOGLE_APPLICATION_CREDENTIALS credentials.json
+ENV CLIENT_ID 431986820612620310
+ENV MIGRATE true
+ENV SQL_PATH $DB/prod.db
+ENV ROOT_URL https://athna.xyz
 
-CMD node dist/index.js
+ENV PORT 8081
+
+# DB vol
+
+VOLUME $DB
+
+# Start
+
+CMD yarn start

@@ -1,21 +1,30 @@
 {
+  "files": [],
+  "references": [
+    { "path": "web" },
+    { "path": "common" },
+    { "path": "backend" }
+  ],
   "compilerOptions": {
-    "module": "commonjs",
+    "incremental": true,
+    "target": "ES2019",
+    "module": "CommonJS",
+    "declaration": true,
+    "sourceMap": true,
+    "composite": true,
+    "strict": false,
+    "moduleResolution": "node",
+    "baseUrl": "./",
     "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es2019",
     "lib": [
       "es2019",
-      "es2020.bigint",
+      "esnext.bigint",
       "es2020.string",
       "es2020.symbol.wellknown"
-    ],
-    "noImplicitAny": true,
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "outDir": "dist",
-    "baseUrl": "."
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+    ]
+  }
 }
