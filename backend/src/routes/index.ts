@@ -5,6 +5,11 @@ import "@/express-shim";
 import axios from "axios";
 const router = express.Router();
 
+// Health check
+router.get("/", function (_1, res, _3) {
+  res.status(200).json({ status: "healthy" });
+});
+
 // Auth
 import authHandler from "./auth";
 router.use("/auth", authHandler);

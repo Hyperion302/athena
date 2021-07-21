@@ -10,7 +10,7 @@ const logger = createLogger({
   level: "info",
   transports: [
     new transports.Console({
-      level: production ? "error" : "silly",
+      level: production ? "info" : "silly",
       format: format.combine(format.colorize(), consoleFormat),
     }),
   ],

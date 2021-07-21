@@ -1,5 +1,7 @@
 # Athena
 
+**Development of Athena has been placed on hold for the time being**
+
 Athena is an automoderation bot that uses [Direct
 Democracy](https://en.wikipedia.org/wiki/Direct_democracy) to make decisions.
 
@@ -16,7 +18,7 @@ happy!
 
 ## Usage
 
-See [Help](https://athna.xyz/docs)
+See [Docs](https://athna.xyz/docs)
 
 ## What's Ahead
 
@@ -30,5 +32,5 @@ Web Interface.
 The next major release **v3.0** will bring:
 * 100% (or as close to 100% Discord.JS will allow) feature-parity with native 
 Discord moderation tools
-* Quorums
+* Custom, votable server settings (Minimum/Maximum duration, Quorum)
 * A voter role

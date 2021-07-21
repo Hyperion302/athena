@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import axios from "axios";
-import logger from "../../logging";
+import logger from "@/logging";
 import qs from "qs";
 
 const TOKEN_URL = "https://discordapp.com/api/oauth2/token";
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const OAUTH_REDIRECT = `${process.env.ROOT_URL}/authRedirect`;
 
 export default async function (req: Request, res: Response) {
   if (!req.body.code) {
@@ -22,7 +23,7 @@ export default async function (req: Request, res: Response) {
         client_secret: CLIENT_SECRET,
         grant_type: "authorization_code",
         code: req.body.code,
-        redirect_uri: "http://athena.local:8080/authRedirect",
+        redirect_uri: OAUTH_REDIRECT,
         scope: "identify guilds",
       }),
       headers: {

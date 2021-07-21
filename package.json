@@ -9,7 +9,8 @@
   "scripts": {
     "start:http": "yarn workspace athena-backend run start:dev",
     "start:vue": "yarn workspace athena-web run serve",
-    "start": "concurrently -p \"[{name}]\" -n \"HTTP,VUE\" -c \"bgMagenta.bold,bgGreen.bold\" \"yarn start:http\" \"yarn start:vue\""
+    "start": "concurrently -p \"[{name}]\" -n \"HTTP,VUE\" -c \"bgMagenta.bold,bgGreen.bold\" \"yarn start:http\" \"yarn start:vue\"",
+    "build:backend": "docker --host ssh://ec2-user@api.athna.xyz build -t athena:latest ."
   },
   "devDependencies": {
     "@types/concurrently": "^6",
